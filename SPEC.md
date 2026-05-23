@@ -292,18 +292,49 @@ normalメンバーが設定画面から大学メールを追加認証
 
 #### F-04｜チキンレース（Last One Standing）
 
-**概要：** 就活を一番最後まで始めなかった人が優勝するゲーム（🎓正規就活生のみ参加可）
+**概要：** 就活を一番最後まで始めなかった人が優勝するゲーム（🎓正規就活生のみ参加可）。シーズン制を採用し、中途参加も可能。
+
+**シーズン設計**
+
+| 項目 | 内容 |
+|---|---|
+| シーズン期間 | 就活解禁日（12月1日）〜内定式（翌年10月1日）の約10ヶ月 |
+| プレシーズン | シーズン外に入会したメンバーは次のシーズン開幕まで練習モードで参加 |
+| シーズン開幕イベント | 12月1日にタイムライン全体に開幕速報が流れる |
+| シーズン終了カウントダウン | 内定式まで残り30日を切るとカウントダウン表示 |
+
+**参加ルール**
 
 | 項目 | 内容 |
 |---|---|
 | 参加資格 | 🎓正規就活生のみ（🕵️怪しいやつは観戦のみ） |
-| 参加方法 | シーズン開始時にエントリー（任意） |
-| シーズン期間 | 就活解禁日〜内定式（約8ヶ月）を1シーズンとする |
-| 脱落条件 | ES提出・インターン参加などを自己申告した時点で脱落 |
+| 参加方法 | シーズン中いつでもエントリー可能（中途参加OK） |
+| ランキング基準 | シーズン内の「生存日数」でランキング（早期参加者が有利だが途中参加でも楽しめる） |
+| 脱落条件 | ES提出・インターン参加などを申告した時点で脱落 |
 | 脱落演出 | タイムラインに訃報風お知らせが自動投稿される |
-| 優勝条件 | 最後まで残った1人（または最長サボり記録者）が優勝 |
+| 優勝条件 | シーズン終了時点で最長生存日数のメンバーが優勝 |
 | 優勝称号 | 「令和の無職王」（殿堂入り・プロフィールに永久表示） |
+| 完走者 | シーズン終了まで生存したメンバーは「完走者」として記録 |
 | リアルタイム表示 | 現在の生存者数・脱落者数をトップページに常時表示 |
+
+**シーズンイベント演出**
+
+```
+【開幕】12月1日
+　「チキンレース シーズン○ 開幕！」
+　全メンバーに通知・タイムラインが盛り上がる
+
+【中間】残り90日
+　「あと90日。まだ生存者 X,XXX人」
+
+【終盤】残り30日〜
+　カウントダウン表示開始
+　「内定式まであと30日」
+
+【終了】10月1日
+　最終生存者「令和の無職王」誕生を速報
+　完走者一覧をタイムラインで公開
+```
 
 **訃報テンプレート**
 ```
@@ -571,16 +602,19 @@ ChickenRace
   entry_id         UUID PRIMARY KEY
   season_id        UUID REFERENCES Seasons
   user_id          UUID REFERENCES Users
-  status           ENUM('alive', 'eliminated')
-  survived_days    INTEGER DEFAULT 0
-  eliminated_at    TIMESTAMP
+  status           ENUM('preseason','alive','eliminated','completed')
+  joined_at        TIMESTAMP DEFAULT NOW()   -- エントリー日時（中途参加対応）
+  survived_days    INTEGER DEFAULT 0         -- シーズン内の生存日数
+  eliminated_at    TIMESTAMP                 -- 脱落日時
 
 -- シーズンテーブル
 Seasons
   season_id        UUID PRIMARY KEY
-  name             VARCHAR(100)
-  started_at       TIMESTAMP
-  ended_at         TIMESTAMP
+  name             VARCHAR(100)              -- 例：シーズン1（2024年度）
+  status           ENUM('preseason','active','finished')
+  started_at       TIMESTAMP                 -- 12月1日
+  ended_at         TIMESTAMP                 -- 翌年10月1日
+  created_at       TIMESTAMP DEFAULT NOW()
 
 -- 汚染ログテーブル
 ContaminationLogs
@@ -629,48 +663,87 @@ Informants
 
 ## 6. 技術スタック
 
-### 6.1 構成概要
+### 6.1 開発方針
 
 ```
-アーキテクチャ：SPA基本 + ページ別レンダリング戦略（Next.js）
+優先順位：
+　① スマホアプリ（iOS App Storeリリースを目標）
+　② Webアプリ（スマホアプリ完成後に着手）
 
-CSR（Client Side Rendering）
-　├─ ホーム（タイムライン）   ─ リアルタイム性優先
-　├─ チキンレース             ─ WebSocketで即時更新
-　├─ カレンダー・リマインダー ─ インタラクション重視
-　├─ 企業リンク帳             ─ 個人データ表示
-　└─ プロフィール             ─ 動的コンテンツ
-
-SSR（Server Side Rendering）
-　└─ トップ／ランディング     ─ 初回表示速度・OGP対応
-
-SSG（Static Site Generation）
-　├─ ランキング               ─ SEO・定期更新で十分
-　└─ 脱落者インタビュー       ─ コンテンツSEO・バイラル流入
+共通バックエンド（FastAPI）を中心に
+スマホ・Webの両フロントエンドが接続する構成
 ```
 
-### 6.2 技術スタック一覧
+### 6.2 スマホアプリ（優先）
 
 | 区分 | 技術 | 備考 |
 |---|---|---|
-| Frontend | **Next.js + TypeScript** | App Router・CSR/SSR/SSGをページ別に使い分け |
-| Backend | FastAPI（Python） | 非同期処理に強い |
+| フレームワーク | **React Native + Expo** | iOS・Android同時開発可能 |
+| 言語 | TypeScript | 型安全・Web側と共通化できる |
+| ビルド | **EAS Build（クラウドビルド）** | macOS不要・チーム全員がWindowsでも開発可能 |
+| 実機確認 | Expo Go | スマホ1台あれば即確認できる |
+| ストア | App Store（iOS優先）・Google Play（後続） | Apple Developer Program：$99/年 |
+| ナビゲーション | React Navigation | スタック・タブ・ドロワーに対応 |
+| 状態管理 | Zustand | 軽量・シンプル・チームで扱いやすい |
+| プッシュ通知 | Expo Notifications | 脱落通知・リマインダーに使用 |
+
+### 6.3 Webアプリ（後続）
+
+| 区分 | 技術 | 備考 |
+|---|---|---|
+| フレームワーク | **Next.js + TypeScript** | App Router・CSR/SSR/SSGをページ別に使い分け |
+| レンダリング戦略 | CSR / SSR / SSG | 下表参照 |
+| インフラ | Vercel | Next.js公式ホスティング・デプロイ設定ほぼゼロ |
+
+**Webのレンダリング戦略**
+
+| 画面 | 方式 | 理由 |
+|---|---|---|
+| ホーム・チキンレース・カレンダー | CSR | リアルタイム性・インタラクション優先 |
+| トップ／ランディング | SSR | 初回表示速度・OGP対応 |
+| ランキング・脱落者インタビュー | SSG | SEO・バイラル流入を狙う |
+
+### 6.4 共通バックエンド
+
+| 区分 | 技術 | 備考 |
+|---|---|---|
+| バックエンド | **FastAPI（Python）** | スマホ・Web両方から接続・非同期処理に強い |
 | DB | PostgreSQL | 永続データ |
 | キャッシュ | Redis | セッション・リアルタイムカウント |
 | リアルタイム通信 | WebSocket | 脱落通知・訃報速報 |
 | 認証 | メール認証 + OAuth（Google/Apple） | 二層化設計 |
-| インフラ | **Vercel（Frontend）**+ Railway（Backend） | Next.js公式ホスティング・デプロイ設定ほぼゼロ |
+| インフラ | Railway | MVP向け低コスト |
 | ストレージ | Cloudflare R2 | 画像アップロード |
-| メール送信 | Resend or SendGrid | 認証メール送信 |
+| メール送信 | Resend | 認証メール送信 |
 
-### 6.3 Next.js採用の補足
+### 6.5 開発ツール
 
-| 観点 | 内容 |
+| ツール | 用途 |
 |---|---|
-| Vercelとの相性 | Next.jsはVercel製。デプロイが設定ほぼゼロで動作する |
-| 学習コスト | ReactベースのためReact知識がそのまま活用できる |
-| MVP方針 | 迷ったらClient Component（CSR）で割り切る。SSR/SSGは後から最適化 |
-| App Router | ファイルベースRoutingで構造が直感的。Server/Client Componentsの使い分けに最初だけ慣れが必要 |
+| VSCode | 全員共通のエディタ |
+| Expo Go | スマホ実機確認 |
+| EAS Build | クラウドビルド（iOS/Android） |
+| Apple Developer Program | App Storeリリース（$99/年） |
+| GitHub | ソースコード管理・チーム開発 |
+| Figma（任意） | UIデザイン詳細化・チーム共有 |
+
+### 6.6 iOSリリースまでの流れ
+
+```
+① React Native + Expo で開発
+　　↓
+② Expo Go で実機確認しながら開発
+　　↓
+③ Apple Developer Program に登録（$99/年・代表者1人）
+　　↓
+④ EAS Build でクラウドビルド（.ipaファイル生成）
+　　↓
+⑤ App Store Connect にアップロード
+　　↓
+⑥ App Store 審査（通常1〜3日）
+　　↓
+⑦ App Store リリース
+```
 
 ---
 
@@ -704,7 +777,9 @@ SSG（Static Site Generation）
 | リマインダー未使用メンバーの疎外 | 手動申告（A）・投稿時選択（C）の複数経路を用意し、リマインダーはあくまでオプションとして位置づける |
 | 大学メール失効（卒業後） | contact_emailとuniversity_emailを分離管理し、失効しても継続利用可能 |
 | 🕵️メンバーの荒らし | 通常投稿を1日3回に制限・リアクション制限で影響を最小化 |
+| App Store審査却下 | 「就活を馬鹿にしている」と判断されるリスクあり。ユーモアの範囲であることを説明文で明示。暴力・差別表現を徹底排除 |
+| EAS Buildのクレジット上限 | 無料枠を超えた場合は月額課金が発生。チームで使用量を管理する |
 
 ---
 
-*ver 8.0 — MVP定義を更新（実用ツールを最低限動く形でMVPに含める・フック／リテンション設計を明記） — Naitei Nai Club 企画チーム*
+*ver 10.0 — チキンレースにシーズン制・中途参加設計を追加 — Naitei Nai Club 企画チーム*
