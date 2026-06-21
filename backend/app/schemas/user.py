@@ -47,3 +47,7 @@ class UserProfilePatch(BaseModel):
     university: Optional[str] = None
     faculty: Optional[str] = None
     grade: Optional[int] = None
+
+
+UserResponse = UserProfile
+UserSettingsUpdate = UserSettingsPatch

@@ -48,3 +48,6 @@ class CalendarNotificationSettings(BaseModel):
     notif_day_before: Optional[bool] = None
     notif_one_hour: Optional[bool] = None
     notif_followup: Optional[bool] = None
+
+
+CalendarEventUpdate = CalendarEventPatch

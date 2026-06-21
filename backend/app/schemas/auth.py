@@ -45,6 +45,7 @@ class TokenResponse(BaseModel):
     user_id: str
     auth_type: str
     nickname: str
+    email_verified: bool = False
 
 
 class UpgradeRequest(BaseModel):

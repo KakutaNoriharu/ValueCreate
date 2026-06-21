@@ -32,3 +32,6 @@ class CompanyPatch(BaseModel):
     status: Optional[str] = None
     deadline: Optional[date] = None
     memo: Optional[str] = None
+
+
+CompanyUpdate = CompanyPatch

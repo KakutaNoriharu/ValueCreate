@@ -1,3 +1,20 @@
+REASON_LABELS = {
+    "es": "ES提出",
+    "internship_short": "インターン参加",
+    "internship_long": "長期インターン参加",
+    "briefing": "説明会参加",
+    "ob_visit": "OB/OG訪問",
+    "spi": "SPI勉強",
+    "suit": "スーツ購入",
+    "naitei": "内定獲得",
+}
+
+
+def build_obituary(nickname: str, reason: str, survived_days: int, contamination_pt: int) -> str:
+    reason_label = REASON_LABELS.get(reason, reason)
+    return generate_obituary(nickname, reason_label, survived_days, contamination_pt)
+
+
 def generate_obituary(nickname: str, elimination_reason: str, survived_days: int, contamination_pt: int) -> str:
     return (
         "━━━━━━━━━━━━━━━━━━\n"

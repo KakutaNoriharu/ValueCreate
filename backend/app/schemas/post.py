@@ -39,6 +39,7 @@ class PostResponse(BaseModel):
 
 class PostCreate(BaseModel):
     content: str
+    image_url: Optional[str] = None
     post_type: str = "normal"
     daily_skip: Optional[str] = None
     daily_instead: Optional[str] = None
