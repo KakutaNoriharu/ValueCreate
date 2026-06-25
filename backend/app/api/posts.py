@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
@@ -13,9 +13,6 @@ from app.schemas.post import PostCreate
 from app.core.auth import get_current_user
 
 router = APIRouter()
-
-DAILY_POST_LIMIT_NORMAL = 3
-
 
 def _serialize_post(post: Post, current_user_id: str) -> dict:
     counts = Counter(r.reaction_type for r in post.reactions)
@@ -80,21 +77,6 @@ async def create_post(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if current_user.auth_type == "normal":
-        from datetime import date, datetime, timezone
-        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-        count_result = await db.execute(
-            select(func.count(Post.post_id))
-            .where(Post.user_id == current_user.user_id)
-            .where(Post.created_at >= today_start)
-        )
-        count = count_result.scalar_one()
-        if count >= DAILY_POST_LIMIT_NORMAL:
-            raise HTTPException(
-                status_code=429,
-                detail=f"🕵️ 怪しいやつは1日{DAILY_POST_LIMIT_NORMAL}回までしか投稿できません",
-            )
-
     post = Post(
         user_id=current_user.user_id,
         content=body.content,
@@ -146,9 +128,6 @@ async def react_to_post(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if current_user.auth_type == "normal" and reaction_type != "kusa":
-        raise HTTPException(status_code=403, detail="🕵️ 怪しいやつは「草」のリアクションのみ使用できます")
-
     if reaction_type not in ("wakaru", "toutoi", "kusa"):
         raise HTTPException(status_code=400, detail="無効なリアクションタイプです")
 

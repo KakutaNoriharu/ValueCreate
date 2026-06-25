@@ -95,9 +95,6 @@ async def report_contamination(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if current_user.auth_type != "university":
-        raise HTTPException(status_code=403, detail="🕵️ 怪しいやつは汚染度機能を使用できません")
-
     point = ACTION_POINTS.get(body.action_type, 0)
 
     if body.action_type == "naitei":

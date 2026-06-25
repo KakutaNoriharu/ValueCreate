@@ -34,8 +34,6 @@ const CONTAMINATION_ACTIONS = [
 export default function PostScreen({ navigation }: MainTabScreenProps<'Post'>) {
   const user = useAuthStore((s) => s.user);
   const { prependPost } = usePostStore();
-  const isNormal = user?.auth_type === 'normal';
-  const isUniversity = user?.auth_type === 'university';
 
   const [activeTab, setActiveTab] = useState<PostTab>('normal');
   const [content, setContent] = useState('');
@@ -97,7 +95,7 @@ export default function PostScreen({ navigation }: MainTabScreenProps<'Post'>) {
   const tabs: { key: PostTab; label: string }[] = [
     { key: 'normal', label: '通常投稿' },
     { key: 'daily', label: 'デイリー' },
-    ...(isUniversity ? [{ key: 'contamination' as PostTab, label: '汚染申告' }] : []),
+    { key: 'contamination', label: '汚染申告' },
   ];
 
   return (
@@ -142,8 +140,7 @@ export default function PostScreen({ navigation }: MainTabScreenProps<'Post'>) {
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{user?.nickname}</Text>
             <Text style={styles.userMeta}>
-              {user?.auth_type === 'university' ? '🎓 正規就活生' : '🕵️ 怪しいやつ'}
-              {user?.streak_days ? `　🔥 ${user.streak_days}日連続サボり中` : ''}
+              {user?.streak_days ? `🔥 ${user.streak_days}日連続サボり中` : 'NNCメンバー'}
             </Text>
           </View>
         </View>
@@ -200,7 +197,7 @@ export default function PostScreen({ navigation }: MainTabScreenProps<'Post'>) {
         )}
 
         {/* Activity selector for normal/daily tabs */}
-        {activeTab !== 'contamination' && isUniversity && (
+        {activeTab !== 'contamination' && (
           <View style={styles.activitySection}>
             <Text style={styles.activityLabel}>今日は就活しましたか？</Text>
             <View style={styles.activityRow}>
@@ -255,11 +252,6 @@ export default function PostScreen({ navigation }: MainTabScreenProps<'Post'>) {
           </View>
         )}
 
-        {isNormal && activeTab === 'normal' && (
-          <View style={styles.limitNote}>
-            <Text style={styles.limitNoteText}>🕵️ 怪しいやつは1日3回まで投稿できます</Text>
-          </View>
-        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -466,16 +458,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: Colors.warning,
-  },
-  limitNote: {
-    marginTop: 16,
-    backgroundColor: 'rgba(136,135,128,0.1)',
-    borderRadius: 8,
-    padding: 10,
-    alignItems: 'center',
-  },
-  limitNoteText: {
-    fontSize: 12,
-    color: Colors.muted,
   },
 });

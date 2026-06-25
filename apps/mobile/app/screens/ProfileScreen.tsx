@@ -101,7 +101,6 @@ export default function ProfileScreen() {
     );
   }
 
-  const isUniversity = user.auth_type === 'university';
   const contaminPct = Math.min(1, user.contamination_pt / (STAGE_MAX[user.character_stage] ?? 200));
   const nextMilestone = nextStreakMilestone(user.streak_days);
   const streakPct = Math.min(1, user.streak_days / nextMilestone);
@@ -127,11 +126,6 @@ export default function ProfileScreen() {
         <View style={styles.heroInfo}>
           <View style={styles.nameRow}>
             <Text style={styles.nickname}>{user.nickname}</Text>
-            <View style={[styles.authBadge, isUniversity ? styles.authBadgeUniversity : styles.authBadgeNormal]}>
-              <Text style={styles.authBadgeText}>
-                {isUniversity ? '🎓 正規就活生' : '🕵️ 怪しいやつ'}
-              </Text>
-            </View>
           </View>
           {user.university && user.show_university && (
             <Text style={styles.universityText}>{user.university}{user.faculty ? ` · ${user.faculty}` : ''}</Text>
@@ -141,25 +135,23 @@ export default function ProfileScreen() {
       </View>
 
       {/* 汚染度カード */}
-      {isUniversity && (
-        <View style={styles.statCard}>
-          <View style={styles.statCardHeader}>
-            <Text style={styles.statCardTitle}>汚染度</Text>
-            <Text style={styles.statCardValue}>{user.contamination_pt}pt</Text>
-          </View>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${contaminPct * 100}%`, backgroundColor: Colors.contamination },
-              ]}
-            />
-          </View>
-          <Text style={styles.progressLabel}>
-            {STAGE_LABELS[user.character_stage]} → 次のステージまで {STAGE_MAX[user.character_stage] - user.contamination_pt}pt
-          </Text>
+      <View style={styles.statCard}>
+        <View style={styles.statCardHeader}>
+          <Text style={styles.statCardTitle}>汚染度</Text>
+          <Text style={styles.statCardValue}>{user.contamination_pt}pt</Text>
         </View>
-      )}
+        <View style={styles.progressBar}>
+          <View
+            style={[
+              styles.progressFill,
+              { width: `${contaminPct * 100}%`, backgroundColor: Colors.contamination },
+            ]}
+          />
+        </View>
+        <Text style={styles.progressLabel}>
+          {STAGE_LABELS[user.character_stage]} → 次のステージまで {STAGE_MAX[user.character_stage] - user.contamination_pt}pt
+        </Text>
+      </View>
 
       {/* No-ES Streak カード */}
       <View style={styles.statCard}>
@@ -182,8 +174,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* 勲章バッジ */}
-      {isUniversity && (
-        <View style={styles.section}>
+      <View style={styles.section}>
           <Text style={styles.sectionTitle}>勲章</Text>
           <View style={styles.badgeGrid}>
             {STREAK_BADGES.map((badge) => {
@@ -201,8 +192,7 @@ export default function ProfileScreen() {
               );
             })}
           </View>
-        </View>
-      )}
+      </View>
 
       {/* 最近の投稿 */}
       {recentPosts.length > 0 && (
@@ -249,10 +239,6 @@ const styles = StyleSheet.create({
   heroInfo: { flex: 1, gap: 6 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   nickname: { fontSize: 20, fontWeight: 'bold', color: Colors.onPrimary },
-  authBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 3 },
-  authBadgeUniversity: { backgroundColor: 'rgba(29,158,117,0.3)' },
-  authBadgeNormal: { backgroundColor: 'rgba(136,135,128,0.3)' },
-  authBadgeText: { fontSize: 11, color: Colors.onPrimary, fontWeight: '600' },
   universityText: { fontSize: 13, color: Colors.muted },
   stageLabel: { fontSize: 13, color: Colors.muted, fontStyle: 'italic' },
   statCard: {

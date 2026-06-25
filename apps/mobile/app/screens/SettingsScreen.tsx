@@ -1,13 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -27,10 +25,6 @@ type SettingField =
 export default function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>) {
   const { user, setUser, logout } = useAuthStore();
   const [saving, setSaving] = useState<SettingField | null>(null);
-  const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
-  const [upgradeEmail, setUpgradeEmail] = useState('');
-  const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
-  const [upgradeSent, setUpgradeSent] = useState(false);
 
   async function toggleSetting(field: SettingField, value: boolean) {
     if (!user) return;
@@ -42,25 +36,6 @@ export default function SettingsScreen({ navigation }: RootStackScreenProps<'Set
       /* silent — toggle reverts via no state change */
     } finally {
       setSaving(null);
-    }
-  }
-
-  async function handleUpgrade() {
-    const email = upgradeEmail.trim().toLowerCase();
-    if (!email) { Alert.alert('エラー', '大学メールアドレスを入力してください'); return; }
-    if (!email.endsWith('.ac.jp')) {
-      Alert.alert('エラー', '大学メールは .ac.jp ドメインのみ有効です');
-      return;
-    }
-
-    setUpgradeSubmitting(true);
-    try {
-      await api.post('/api/auth/upgrade', { university_email: email });
-      setUpgradeSent(true);
-    } catch (e: unknown) {
-      Alert.alert('エラー', e instanceof Error ? e.message : 'アップグレードに失敗しました');
-    } finally {
-      setUpgradeSubmitting(false);
     }
   }
 
@@ -125,8 +100,6 @@ export default function SettingsScreen({ navigation }: RootStackScreenProps<'Set
     );
   }
 
-  const isNormal = user.auth_type === 'normal';
-
   return (
     <View style={styles.container}>
       <ScrollView>
@@ -135,28 +108,11 @@ export default function SettingsScreen({ navigation }: RootStackScreenProps<'Set
           <Text style={styles.sectionTitle}>認証ステータス</Text>
           <View style={styles.card}>
             <View style={styles.authRow}>
-              <View>
-                <Text style={styles.authBadge}>
-                  {isNormal ? Strings.member.normal : Strings.member.university}
-                </Text>
-                <Text style={styles.authEmail}>{user.contact_email}</Text>
-              </View>
-              {isNormal && (
-                <TouchableOpacity
-                  style={styles.upgradeBtn}
-                  onPress={() => { setUpgradeSent(false); setUpgradeEmail(''); setUpgradeModalVisible(true); }}
-                >
-                  <Text style={styles.upgradeBtnText}>大学メールを認証</Text>
-                </TouchableOpacity>
-              )}
+            <View>
+              <Text style={styles.authBadge}>NNCメンバー</Text>
+              <Text style={styles.authEmail}>{user.contact_email}</Text>
             </View>
-            {isNormal && (
-              <View style={styles.normalRestrictionNote}>
-                <Text style={styles.normalRestrictionText}>
-                  🕵️ 現在は制限付きメンバーです。大学メール（.ac.jp）を認証すると🎓正規就活生に昇格できます。
-                </Text>
-              </View>
-            )}
+          </View>
           </View>
         </View>
 
@@ -245,66 +201,6 @@ export default function SettingsScreen({ navigation }: RootStackScreenProps<'Set
         <View style={{ height: 60 }} />
       </ScrollView>
 
-      {/* Upgrade Modal */}
-      <Modal visible={upgradeModalVisible} animationType="slide" presentationStyle="pageSheet">
-        <View style={styles.modal}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setUpgradeModalVisible(false)}>
-              <Text style={styles.modalCancel}>閉じる</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>大学メール認証</Text>
-            <View style={{ width: 60 }} />
-          </View>
-
-          <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
-            {upgradeSent ? (
-              <View style={styles.upgradeSentContainer}>
-                <Text style={styles.upgradeSentIcon}>✉️</Text>
-                <Text style={styles.upgradeSentTitle}>確認メールを送信しました</Text>
-                <Text style={styles.upgradeSentText}>
-                  入力した大学メールアドレス宛に確認リンクを送信しました。メールを確認してリンクをクリックすると🎓正規就活生に昇格します。
-                </Text>
-                <TouchableOpacity style={styles.upgradeDoneBtn} onPress={() => setUpgradeModalVisible(false)}>
-                  <Text style={styles.upgradeDoneBtnText}>OK</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <>
-                <View style={styles.upgradeInfo}>
-                  <Text style={styles.upgradeInfoText}>
-                    🎓 大学メール（.ac.jp）で認証すると正規就活生に昇格できます。
-                  </Text>
-                  <Text style={styles.upgradeInfoSubText}>
-                    昇格後にできること: チキンレース参加・汚染度機能・デイリー報告・全種類のリアクション
-                  </Text>
-                </View>
-
-                <Text style={styles.modalLabel}>大学メールアドレス</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="example@university.ac.jp"
-                  placeholderTextColor={Colors.muted}
-                  value={upgradeEmail}
-                  onChangeText={setUpgradeEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoFocus
-                />
-
-                <TouchableOpacity
-                  style={[styles.upgradeSubmitBtn, upgradeSubmitting && { opacity: 0.5 }]}
-                  onPress={handleUpgrade}
-                  disabled={upgradeSubmitting}
-                >
-                  {upgradeSubmitting
-                    ? <ActivityIndicator color={Colors.onPrimary} />
-                    : <Text style={styles.upgradeSubmitText}>確認メールを送信する</Text>}
-                </TouchableOpacity>
-              </>
-            )}
-          </ScrollView>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -357,10 +253,6 @@ const styles = StyleSheet.create({
   authRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
   authBadge: { fontSize: 16, fontWeight: '700', color: Colors.primary, marginBottom: 2 },
   authEmail: { fontSize: 13, color: Colors.muted },
-  upgradeBtn: { backgroundColor: Colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
-  upgradeBtnText: { fontSize: 13, color: Colors.onPrimary, fontWeight: '600' },
-  normalRestrictionNote: { borderTopWidth: 1, borderTopColor: Colors.border, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#FFF8E7' },
-  normalRestrictionText: { fontSize: 12, color: '#92400E', lineHeight: 18 },
   settingRow: { flexDirection: 'row', alignItems: 'center', padding: 14 },
   settingRowBorder: { borderTopWidth: 1, borderTopColor: Colors.border },
   settingInfo: { flex: 1, gap: 2 },
@@ -377,22 +269,4 @@ const styles = StyleSheet.create({
   banLabel: { fontSize: 15, color: Colors.contamination, fontWeight: '600' },
   dangerDesc: { fontSize: 12, color: Colors.muted, marginTop: 2 },
   dangerChevron: { fontSize: 20, color: Colors.muted, marginLeft: 8 },
-  modal: { flex: 1, backgroundColor: Colors.background },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingTop: 20, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  modalCancel: { fontSize: 15, color: Colors.muted, width: 60 },
-  modalTitle: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '700', color: Colors.primary },
-  modalBody: { flex: 1, padding: 16 },
-  modalLabel: { fontSize: 12, color: Colors.muted, marginTop: 16, marginBottom: 6 },
-  modalInput: { backgroundColor: Colors.white, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, padding: 14, fontSize: 15, color: Colors.primary },
-  upgradeInfo: { backgroundColor: '#EFF6FF', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#BFDBFE', gap: 6 },
-  upgradeInfoText: { fontSize: 14, color: '#1D4ED8', fontWeight: '600' },
-  upgradeInfoSubText: { fontSize: 13, color: '#3B82F6', lineHeight: 18 },
-  upgradeSubmitBtn: { backgroundColor: Colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 20 },
-  upgradeSubmitText: { fontSize: 16, color: Colors.onPrimary, fontWeight: '700' },
-  upgradeSentContainer: { alignItems: 'center', paddingTop: 40, paddingHorizontal: 24, gap: 16 },
-  upgradeSentIcon: { fontSize: 60 },
-  upgradeSentTitle: { fontSize: 20, fontWeight: '700', color: Colors.primary },
-  upgradeSentText: { fontSize: 14, color: Colors.muted, textAlign: 'center', lineHeight: 22 },
-  upgradeDoneBtn: { backgroundColor: Colors.primary, borderRadius: 12, paddingHorizontal: 40, paddingVertical: 14, marginTop: 16 },
-  upgradeDoneBtnText: { fontSize: 16, color: Colors.onPrimary, fontWeight: '700' },
 });

@@ -17,13 +17,9 @@ import { api } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import type { TokenResponse } from '../../types';
 
-type AuthType = 'university' | 'normal';
-
 const GRADE_OPTIONS = ['学部3年', '学部4年', '修士1年', '修士2年', 'その他'];
 
-export default function SignUpScreen({ route, navigation }: AuthStackScreenProps<'SignUp'>) {
-  const initialType = route.params?.authType ?? 'normal';
-  const [authType, setAuthType] = useState<AuthType>(initialType);
+export default function SignUpScreen({ navigation }: AuthStackScreenProps<'SignUp'>) {
   const { setAuth } = useAuthStore();
 
   const [nickname, setNickname] = useState('');
@@ -34,8 +30,6 @@ export default function SignUpScreen({ route, navigation }: AuthStackScreenProps
   const [grade, setGrade] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const isUniversity = authType === 'university';
 
   async function handleSubmit() {
     if (!nickname.trim()) {
@@ -48,10 +42,6 @@ export default function SignUpScreen({ route, navigation }: AuthStackScreenProps
     }
     if (!email.trim()) {
       Alert.alert('エラー', 'メールアドレスを入力してください');
-      return;
-    }
-    if (isUniversity && !email.toLowerCase().endsWith('.ac.jp')) {
-      Alert.alert('エラー', '大学メールは .ac.jp ドメインのみ有効です');
       return;
     }
     if (password.length < 8) {
@@ -71,7 +61,6 @@ export default function SignUpScreen({ route, navigation }: AuthStackScreenProps
         nickname: nickname.trim(),
         email: email.trim(),
         password,
-        auth_type: authType,
         university: university.trim() || undefined,
         faculty: faculty.trim() || undefined,
         grade: gradeNum >= 0 ? gradeNum + 3 : undefined,
@@ -94,49 +83,6 @@ export default function SignUpScreen({ route, navigation }: AuthStackScreenProps
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.heading}>入会手続き</Text>
 
-        {/* AuthType セレクター */}
-        <View style={styles.typeRow}>
-          <TouchableOpacity
-            style={[styles.typeCard, isUniversity && styles.typeCardActive]}
-            onPress={() => setAuthType('university')}
-          >
-            <Text style={styles.typeIcon}>🎓</Text>
-            <Text style={[styles.typeLabel, isUniversity && styles.typeLabelActive]}>
-              正規就活生
-            </Text>
-            <Text style={styles.typeDesc}>.ac.jp 限定</Text>
-            {isUniversity && <View style={styles.typeCheck}><Text style={styles.typeCheckText}>✓</Text></View>}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.typeCard, !isUniversity && styles.typeCardActive]}
-            onPress={() => setAuthType('normal')}
-          >
-            <Text style={styles.typeIcon}>🕵️</Text>
-            <Text style={[styles.typeLabel, !isUniversity && styles.typeLabelActive]}>
-              怪しいやつ
-            </Text>
-            <Text style={styles.typeDesc}>普通メール</Text>
-            {!isUniversity && <View style={styles.typeCheck}><Text style={styles.typeCheckText}>✓</Text></View>}
-          </TouchableOpacity>
-        </View>
-
-        {isUniversity && (
-          <View style={styles.infoBanner}>
-            <Text style={styles.infoBannerText}>
-              🎓 大学メール認証で正規就活生になれます。チキンレース参加・全リアクション・汚染度システムが解放されます。
-            </Text>
-          </View>
-        )}
-        {!isUniversity && (
-          <View style={[styles.infoBanner, styles.infoBannerWarning]}>
-            <Text style={styles.infoBannerText}>
-              🕵️ 普通メールでの入会は一部機能が制限されます。後から大学メールでアップグレード可能です。
-            </Text>
-          </View>
-        )}
-
-        {/* フォーム */}
         <TextInput
           style={styles.input}
           placeholder="ニックネーム（必須・1〜50文字）"
@@ -144,10 +90,11 @@ export default function SignUpScreen({ route, navigation }: AuthStackScreenProps
           value={nickname}
           onChangeText={setNickname}
           maxLength={50}
+          autoFocus
         />
         <TextInput
           style={styles.input}
-          placeholder={isUniversity ? '大学メール（.ac.jp 必須）' : 'メールアドレス'}
+          placeholder="メールアドレス"
           placeholderTextColor={Colors.muted}
           value={email}
           onChangeText={setEmail}
@@ -178,7 +125,6 @@ export default function SignUpScreen({ route, navigation }: AuthStackScreenProps
           onChangeText={setFaculty}
         />
 
-        {/* 学年選択 */}
         <Text style={styles.fieldLabel}>学年（任意）</Text>
         <View style={styles.gradeRow}>
           {GRADE_OPTIONS.map((g) => (
@@ -194,14 +140,11 @@ export default function SignUpScreen({ route, navigation }: AuthStackScreenProps
           ))}
         </View>
 
-        {/* 規約同意 */}
         <TouchableOpacity style={styles.checkRow} onPress={() => setAgreed(!agreed)}>
           <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
             {agreed && <Text style={styles.checkmark}>✓</Text>}
           </View>
-          <Text style={styles.checkText}>
-            クラブ規約・プライバシーポリシーに同意する
-          </Text>
+          <Text style={styles.checkText}>クラブ規約・プライバシーポリシーに同意する</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -225,77 +168,7 @@ export default function SignUpScreen({ route, navigation }: AuthStackScreenProps
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: 24, paddingTop: 60, gap: 12 },
-  heading: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.primary,
-    marginBottom: 8,
-  },
-  typeRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  typeCard: {
-    flex: 1,
-    borderWidth: 2,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    gap: 4,
-    position: 'relative',
-  },
-  typeCardActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary,
-  },
-  typeIcon: {
-    fontSize: 28,
-  },
-  typeLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  typeLabelActive: {
-    color: Colors.onPrimary,
-  },
-  typeDesc: {
-    fontSize: 11,
-    color: Colors.muted,
-  },
-  typeCheck: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: Colors.survival,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  typeCheckText: {
-    color: Colors.white,
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  infoBanner: {
-    backgroundColor: 'rgba(29,158,117,0.1)',
-    borderRadius: 8,
-    padding: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.survival,
-  },
-  infoBannerWarning: {
-    backgroundColor: 'rgba(136,135,128,0.1)',
-    borderLeftColor: Colors.muted,
-  },
-  infoBannerText: {
-    fontSize: 12,
-    color: Colors.primary,
-    lineHeight: 18,
-  },
+  heading: { fontSize: 24, fontWeight: 'bold', color: Colors.primary, marginBottom: 8 },
   input: {
     borderWidth: 1,
     borderColor: Colors.border,
@@ -305,16 +178,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     color: Colors.primary,
   },
-  fieldLabel: {
-    fontSize: 13,
-    color: Colors.muted,
-    marginBottom: -4,
-  },
-  gradeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
+  fieldLabel: { fontSize: 13, color: Colors.muted, marginBottom: -4 },
+  gradeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   gradeChip: {
     borderWidth: 1,
     borderColor: Colors.border,
@@ -323,23 +188,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: Colors.white,
   },
-  gradeChipActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary,
-  },
-  gradeChipText: {
-    fontSize: 13,
-    color: Colors.primary,
-  },
-  gradeChipTextActive: {
-    color: Colors.onPrimary,
-  },
-  checkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 4,
-  },
+  gradeChipActive: { borderColor: Colors.primary, backgroundColor: Colors.primary },
+  gradeChipText: { fontSize: 13, color: Colors.primary },
+  gradeChipTextActive: { color: Colors.onPrimary },
+  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
   checkbox: {
     width: 22,
     height: 22,
@@ -349,20 +201,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: Colors.primary,
-  },
-  checkmark: {
-    color: Colors.onPrimary,
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  checkText: {
-    fontSize: 13,
-    color: Colors.primary,
-    flex: 1,
-    lineHeight: 18,
-  },
+  checkboxChecked: { backgroundColor: Colors.primary },
+  checkmark: { color: Colors.onPrimary, fontSize: 13, fontWeight: 'bold' },
+  checkText: { fontSize: 13, color: Colors.primary, flex: 1, lineHeight: 18 },
   submitButton: {
     backgroundColor: Colors.primary,
     borderRadius: 10,
@@ -371,18 +212,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   submitButtonDisabled: { opacity: 0.5 },
-  submitButtonText: {
-    color: Colors.onPrimary,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  loginLink: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  loginLinkText: {
-    fontSize: 13,
-    color: Colors.muted,
-    textDecorationLine: 'underline',
-  },
+  submitButtonText: { color: Colors.onPrimary, fontSize: 16, fontWeight: '700' },
+  loginLink: { alignItems: 'center', paddingVertical: 8 },
+  loginLinkText: { fontSize: 13, color: Colors.muted, textDecorationLine: 'underline' },
 });

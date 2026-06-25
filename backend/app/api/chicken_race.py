@@ -149,9 +149,6 @@ async def enter_race(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if current_user.auth_type != "university":
-        raise HTTPException(status_code=403, detail="🕵️ 怪しいやつはチキンレースに参加できません（観戦のみ）")
-
     season = await _get_active_season(db)
     if not season:
         raise HTTPException(status_code=404, detail="現在参加可能なシーズンがありません")

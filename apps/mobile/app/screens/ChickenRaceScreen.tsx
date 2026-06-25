@@ -50,7 +50,6 @@ export default function ChickenRaceScreen() {
   const [activeTab, setActiveTab] = useState<RaceTab>('survivors');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const isUniversity = user?.auth_type === 'university';
 
   async function load(silent = false) {
     if (!silent) setLoading(true);
@@ -205,48 +204,41 @@ export default function ChickenRaceScreen() {
             </View>
 
             {/* My Status Banner */}
-            {isUniversity && (
-              <View style={styles.myStatusBanner}>
-                {myEntry ? (
-                  myEntry.status === 'alive' ? (
-                    <View style={styles.aliveRow}>
-                      <Text style={styles.aliveIcon}>✅</Text>
-                      <View style={styles.aliveInfo}>
-                        <Text style={styles.aliveText}>生存中 · {myEntry.survived_days}日</Text>
-                        <Text style={styles.aliveSub}>チキンレース参加中</Text>
-                      </View>
-                      <TouchableOpacity style={styles.eliminateBtn} onPress={handleEliminate}>
-                        <Text style={styles.eliminateBtnText}>脱落申告</Text>
-                      </TouchableOpacity>
+            <View style={styles.myStatusBanner}>
+              {myEntry ? (
+                myEntry.status === 'alive' ? (
+                  <View style={styles.aliveRow}>
+                    <Text style={styles.aliveIcon}>✅</Text>
+                    <View style={styles.aliveInfo}>
+                      <Text style={styles.aliveText}>生存中 · {myEntry.survived_days}日</Text>
+                      <Text style={styles.aliveSub}>チキンレース参加中</Text>
                     </View>
-                  ) : (
-                    <View style={styles.aliveRow}>
-                      <Text style={styles.aliveIcon}>💀</Text>
-                      <View style={styles.aliveInfo}>
-                        <Text style={[styles.aliveText, { color: Colors.muted }]}>
-                          {myEntry.survived_days}日目に散る
-                        </Text>
-                        <Text style={styles.aliveSub}>
-                          {myEntry.eliminated_at ? timeAgo(myEntry.eliminated_at) : ''}
-                        </Text>
-                      </View>
-                    </View>
-                  )
-                ) : (
-                  <View style={styles.enterRow}>
-                    <Text style={styles.enterText}>チキンレースに参加する？</Text>
-                    <TouchableOpacity style={styles.enterBtn} onPress={handleEnter}>
-                      <Text style={styles.enterBtnText}>エントリー</Text>
+                    <TouchableOpacity style={styles.eliminateBtn} onPress={handleEliminate}>
+                      <Text style={styles.eliminateBtnText}>脱落申告</Text>
                     </TouchableOpacity>
                   </View>
-                )}
-              </View>
-            )}
-            {!isUniversity && (
-              <View style={[styles.myStatusBanner, { backgroundColor: 'rgba(136,135,128,0.1)' }]}>
-                <Text style={styles.watchText}>🕵️ 怪しいやつは観戦のみです</Text>
-              </View>
-            )}
+                ) : (
+                  <View style={styles.aliveRow}>
+                    <Text style={styles.aliveIcon}>💀</Text>
+                    <View style={styles.aliveInfo}>
+                      <Text style={[styles.aliveText, { color: Colors.muted }]}>
+                        {myEntry.survived_days}日目に散る
+                      </Text>
+                      <Text style={styles.aliveSub}>
+                        {myEntry.eliminated_at ? timeAgo(myEntry.eliminated_at) : ''}
+                      </Text>
+                    </View>
+                  </View>
+                )
+              ) : (
+                <View style={styles.enterRow}>
+                  <Text style={styles.enterText}>チキンレースに参加する？</Text>
+                  <TouchableOpacity style={styles.enterBtn} onPress={handleEnter}>
+                    <Text style={styles.enterBtnText}>エントリー</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
 
             {/* Tab bar */}
             <View style={styles.tabBar}>
@@ -364,7 +356,6 @@ const styles = StyleSheet.create({
   enterText: { fontSize: 14, color: Colors.primary },
   enterBtn: { backgroundColor: Colors.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8 },
   enterBtnText: { color: Colors.onPrimary, fontSize: 13, fontWeight: '700' },
-  watchText: { fontSize: 13, color: Colors.muted, textAlign: 'center' },
   tabBar: { flexDirection: 'row', backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.border },
   tabItem: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
   tabItemActive: { borderBottomColor: Colors.topTabIndicator },

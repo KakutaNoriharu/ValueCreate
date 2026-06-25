@@ -24,10 +24,9 @@ function timeAgo(iso: string): string {
 interface Props {
   post: Post;
   onReact: (postId: string, type: ReactionType) => void;
-  isNormal?: boolean;
 }
 
-export default function PostCard({ post, onReact, isNormal = false }: Props) {
+export default function PostCard({ post, onReact }: Props) {
   const { user, contamination_pt } = post.user
     ? { user: post.user, contamination_pt: post.user.contamination_pt }
     : { user: null, contamination_pt: 0 };
@@ -65,9 +64,6 @@ export default function PostCard({ post, onReact, isNormal = false }: Props) {
         <View style={styles.headerInfo}>
           <View style={styles.nameRow}>
             <Text style={styles.nickname}>{user?.nickname ?? '名無し'}</Text>
-            {user?.auth_type === 'university' && (
-              <Text style={styles.badge}>🎓</Text>
-            )}
             {isMidContam && (
               <Text style={styles.warnBadge}>{Strings.contamination.warningLow}</Text>
             )}
@@ -96,13 +92,11 @@ export default function PostCard({ post, onReact, isNormal = false }: Props) {
         {REACTIONS.map(({ type, label }) => {
           const count = getReactionCount(type);
           const isActive = post.my_reaction === type;
-          const disabled = isNormal && type !== 'kusa';
           return (
             <TouchableOpacity
               key={type}
-              style={[styles.reactionBtn, isActive && styles.reactionBtnActive, disabled && styles.reactionBtnDisabled]}
-              onPress={() => !disabled && onReact(post.post_id, type)}
-              disabled={disabled}
+              style={[styles.reactionBtn, isActive && styles.reactionBtnActive]}
+              onPress={() => onReact(post.post_id, type)}
             >
               <Text style={[styles.reactionLabel, isActive && styles.reactionLabelActive]}>
                 {label} {count > 0 ? count : ''}

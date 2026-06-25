@@ -28,7 +28,6 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
     usePostStore();
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<SurvivorStats | null>(null);
-  const isNormal = user?.auth_type === 'normal';
   const initialLoaded = useRef(false);
 
   async function loadFeed(reset = false) {
@@ -149,7 +148,7 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
         data={feedPosts}
         keyExtractor={(item) => item.post_id}
         renderItem={({ item }) => (
-          <PostCard post={item} onReact={handleReact} isNormal={isNormal} />
+          <PostCard post={item} onReact={handleReact} />
         )}
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={
