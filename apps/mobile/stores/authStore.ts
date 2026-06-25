@@ -1,6 +1,6 @@
-import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import type { TokenResponse, User } from '../types';
+import { deleteSecureItem, getSecureItem, setSecureItem } from '../utils/secureStorage';
 
 const TOKEN_KEY = 'nnc_access_token';
 
@@ -24,7 +24,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
 
   setAuth: async (res: TokenResponse) => {
-    await SecureStore.setItemAsync(TOKEN_KEY, res.access_token);
+    await setSecureItem(TOKEN_KEY, res.access_token);
     set({
       token: res.access_token,
       isAuthenticated: true,
@@ -48,7 +48,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   setToken: async (token: string) => {
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    await setSecureItem(TOKEN_KEY, token);
     set({ token, isAuthenticated: true });
   },
 
@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   loadToken: async () => {
     try {
-      const token = await SecureStore.getItemAsync(TOKEN_KEY);
+      const token = await getSecureItem(TOKEN_KEY);
       if (token) {
         set({ token, isAuthenticated: true, isLoading: false });
         // fetch user profile in background
@@ -68,7 +68,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           set({ user });
         } catch {
           // token may be expired — logout silently
-          await SecureStore.deleteItemAsync(TOKEN_KEY);
+          await deleteSecureItem(TOKEN_KEY);
           set({ token: null, isAuthenticated: false, user: null });
         }
       } else {
@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await deleteSecureItem(TOKEN_KEY);
     set({ token: null, user: null, isAuthenticated: false });
   },
 }));
