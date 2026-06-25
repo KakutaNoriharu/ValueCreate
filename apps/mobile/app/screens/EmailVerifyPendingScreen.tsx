@@ -6,21 +6,17 @@ import { useAuthStore } from '../../stores/authStore';
 
 export default function EmailVerifyPendingScreen({
   route,
-  navigation,
 }: AuthStackScreenProps<'EmailVerifyPending'>) {
-  const { email, isUpgrade } = route.params;
+  const { email } = route.params;
   const { logout } = useAuthStore();
-
-  const title = isUpgrade ? '大学メールを確認してください' : 'メールを確認してください';
-  const description = isUpgrade
-    ? `${email} に確認メールを送りました。\nリンクをクリックして大学メール認証を完了すると\n🎓 正規就活生に昇格します。`
-    : `${email} に確認メールを送りました。\nメールのリンクをクリックしてメンバー登録を完了してください。`;
 
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>✉️</Text>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.description}>{description}</Text>
+      <Text style={styles.title}>メールを確認してください</Text>
+      <Text style={styles.description}>
+        {`${email} に確認メールを送りました。\nメールのリンクをクリックしてメンバー登録を完了してください。`}
+      </Text>
 
       <View style={styles.noteCard}>
         <Text style={styles.noteTitle}>届かない場合</Text>
@@ -30,25 +26,14 @@ export default function EmailVerifyPendingScreen({
         </Text>
       </View>
 
-      {!isUpgrade && (
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={async () => {
-            await logout();
-          }}
-        >
-          <Text style={styles.logoutButtonText}>別のアカウントで入会する</Text>
-        </TouchableOpacity>
-      )}
-
-      {isUpgrade && (
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>設定に戻る</Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={async () => {
+          await logout();
+        }}
+      >
+        <Text style={styles.logoutButtonText}>別のアカウントで入会する</Text>
+      </TouchableOpacity>
     </View>
   );
 }

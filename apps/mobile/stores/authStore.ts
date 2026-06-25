@@ -31,7 +31,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       user: {
         user_id: res.user_id,
         nickname: res.nickname,
-        auth_type: res.auth_type,
         email_verified: res.email_verified,
         contamination_pt: 0,
         character_stage: 'pure',

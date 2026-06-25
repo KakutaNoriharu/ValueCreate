@@ -8,15 +8,10 @@ export const Strings = {
     logout: '退出',
     withdraw: '脱退',
     banned: '追放',
-    upgrade: '正規メンバーに昇格',
-    universityEmail: '大学メール',
-    normalEmail: '普通メール',
     verifyEmail: '確認メールを送信する',
   },
 
   member: {
-    university: '🎓 正規就活生',
-    normal: '🕵️ 怪しいやつ',
     profile: 'クラブ手帳',
     notification: 'クラブからの伝達',
     report: '密告',

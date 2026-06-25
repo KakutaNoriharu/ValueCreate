@@ -19,7 +19,6 @@ class ChickenRaceEntry(BaseModel):
     season_id: str
     user_id: str
     nickname: str
-    auth_type: str
     character_stage: str
     status: str
     survived_days: int

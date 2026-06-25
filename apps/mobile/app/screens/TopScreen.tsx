@@ -60,16 +60,10 @@ export default function TopScreen({ navigation }: AuthStackScreenProps<'Top'>) {
       <View style={styles.ctaSection}>
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() => navigation.navigate('SignUp', { authType: 'university' })}
+          onPress={() => navigation.navigate('SignUp')}
         >
-          <Text style={styles.primaryButtonText}>🎓 大学メールで入会</Text>
-          <Text style={styles.primaryButtonSub}>正規就活生として参加</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => navigation.navigate('SignUp', { authType: 'normal' })}
-        >
-          <Text style={styles.secondaryButtonText}>🕵️ 普通メールで入会</Text>
+          <Text style={styles.primaryButtonText}>⚰️ クラブに入会する</Text>
+          <Text style={styles.primaryButtonSub}>メールアドレスだけで参加</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Login')}>
           <Text style={styles.loginButtonText}>すでにメンバーの方はこちら →</Text>
@@ -106,15 +100,9 @@ export default function TopScreen({ navigation }: AuthStackScreenProps<'Top'>) {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() => navigation.navigate('SignUp', { authType: 'university' })}
+          onPress={() => navigation.navigate('SignUp')}
         >
-          <Text style={styles.primaryButtonText}>大学メールで入会する</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => navigation.navigate('SignUp', { authType: 'normal' })}
-        >
-          <Text style={styles.secondaryButtonText}>普通メールで入会する</Text>
+          <Text style={styles.primaryButtonText}>クラブに入会する</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

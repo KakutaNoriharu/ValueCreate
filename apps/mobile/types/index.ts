@@ -1,4 +1,3 @@
-export type AuthType = 'university' | 'normal';
 export type CharacterStage = 'pure' | 'ghost' | 'slave' | 'zombie' | 'banned';
 export type PostType = 'normal' | 'daily' | 'elimination';
 export type ReactionType = 'wakaru' | 'toutoi' | 'kusa';
@@ -13,8 +12,6 @@ export interface User {
   user_id: string;
   nickname: string;
   contact_email: string;
-  university_email?: string;
-  auth_type: AuthType;
   university?: string;
   faculty?: string;
   grade?: number;
@@ -49,7 +46,6 @@ export interface Post {
 export interface UserSummary {
   user_id: string;
   nickname: string;
-  auth_type: AuthType;
   character_stage: CharacterStage;
   contamination_pt: number;
 }
@@ -127,7 +123,6 @@ export interface TokenResponse {
   access_token: string;
   token_type: string;
   user_id: string;
-  auth_type: AuthType;
   nickname: string;
   email_verified: boolean;
 }

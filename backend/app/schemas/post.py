@@ -7,7 +7,6 @@ from pydantic import BaseModel
 class PostAuthor(BaseModel):
     user_id: str
     nickname: str
-    auth_type: str
     character_stage: str
     contamination_pt: int
     show_contamination: bool

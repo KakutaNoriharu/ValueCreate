@@ -1,13 +1,12 @@
-from typing import Literal, Optional
+from typing import Optional
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 
 
 class SignUpRequest(BaseModel):
     nickname: str
     email: str
     password: str
-    auth_type: Literal["university", "normal"]
     university: Optional[str] = None
     faculty: Optional[str] = None
     grade: Optional[int] = None
@@ -43,17 +42,5 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user_id: str
-    auth_type: str
     nickname: str
     email_verified: bool = False
-
-
-class UpgradeRequest(BaseModel):
-    university_email: str
-
-    @field_validator("university_email")
-    @classmethod
-    def must_be_ac_jp(cls, v: str) -> str:
-        if not v.lower().endswith(".ac.jp"):
-            raise ValueError("大学メールは .ac.jp ドメインのみ有効です")
-        return v.lower()

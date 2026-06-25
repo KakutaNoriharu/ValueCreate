@@ -34,7 +34,6 @@ def _serialize_entry(entry: ChickenRace) -> dict:
         "user": {
             "user_id": entry.user.user_id,
             "nickname": entry.user.nickname,
-            "auth_type": entry.user.auth_type,
             "character_stage": entry.user.character_stage,
             "contamination_pt": entry.user.contamination_pt,
         } if entry.user else None,

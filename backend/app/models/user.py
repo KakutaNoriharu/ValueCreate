@@ -13,8 +13,6 @@ class User(Base):
     user_id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     nickname: Mapped[str] = mapped_column(String(50), nullable=False)
     contact_email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    university_email: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
-    auth_type: Mapped[str] = mapped_column(Enum("university", "normal", name="auth_type_enum"), default="normal")
     university: Mapped[str | None] = mapped_column(String(100), nullable=True)
     faculty: Mapped[str | None] = mapped_column(String(100), nullable=True)
     grade: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
@@ -34,7 +32,6 @@ class User(Base):
     notif_parent_bot: Mapped[bool] = mapped_column(Boolean, default=False)
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     email_verify_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    upgrade_verify_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
 
     posts: Mapped[list["Post"]] = relationship("Post", back_populates="user", lazy="select")

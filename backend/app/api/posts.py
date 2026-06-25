@@ -25,7 +25,6 @@ def _serialize_post(post: Post, current_user_id: str) -> dict:
         "user": {
             "user_id": post.user.user_id,
             "nickname": post.user.nickname,
-            "auth_type": post.user.auth_type,
             "character_stage": post.user.character_stage,
             "contamination_pt": post.user.contamination_pt,
         } if post.user else None,

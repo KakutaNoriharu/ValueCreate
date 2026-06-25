@@ -158,7 +158,7 @@ async def complete_event(
     event.completed_at = now
 
     points = EVENT_TO_POINTS.get(event.event_type, 0)
-    if points > 0 and current_user.auth_type == "university":
+    if points > 0:
         current_user.contamination_pt += points
         current_user.streak_days = 0
         current_user.character_stage = compute_stage(current_user.contamination_pt)

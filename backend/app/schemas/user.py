@@ -7,7 +7,6 @@ from pydantic import BaseModel
 class UserProfile(BaseModel):
     user_id: str
     nickname: str
-    auth_type: str
     university: Optional[str] = None
     faculty: Optional[str] = None
     grade: Optional[int] = None

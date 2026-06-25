@@ -11,6 +11,9 @@ import { Strings } from '../../constants/strings';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+// 開発用：EXPO_PUBLIC_DEV_BYPASS_AUTH=1 のとき認証ゲートを素通りする（__DEV__ 限定）
+const DEV_BYPASS_AUTH = __DEV__ && process.env.EXPO_PUBLIC_DEV_BYPASS_AUTH === '1';
+
 function MainStack() {
   return (
     <Stack.Navigator>
@@ -42,11 +45,11 @@ export default function RootNavigator() {
     }
   }, [loadToken]);
 
-  if (isLoading) return null;
+  if (isLoading && !DEV_BYPASS_AUTH) return null;
 
   return (
     <NavigationContainer>
-      {isAuthenticated ? <MainStack /> : <AuthStack />}
+      {isAuthenticated || DEV_BYPASS_AUTH ? <MainStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }

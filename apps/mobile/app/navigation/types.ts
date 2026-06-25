@@ -5,8 +5,8 @@ import type { MaterialTopTabScreenProps } from '@react-navigation/material-top-t
 export type AuthStackParamList = {
   Top: undefined;
   Login: undefined;
-  SignUp: { authType?: 'university' | 'normal' };
-  EmailVerifyPending: { email: string; isUpgrade?: boolean };
+  SignUp: undefined;
+  EmailVerifyPending: { email: string };
 };
 
 export type MainTabParamList = {

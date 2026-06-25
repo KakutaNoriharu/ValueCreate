@@ -23,11 +23,9 @@ async def signup(body: SignUpRequest, db: AsyncSession = Depends(get_db)):
         nickname=body.nickname,
         contact_email=body.email.lower(),
         password_hash=hash_password(body.password),
-        auth_type=body.auth_type,
         university=body.university,
         faculty=body.faculty,
         grade=body.grade,
-        university_email=body.email.lower() if body.auth_type == "university" else None,
         email_verified=False,
         email_verify_token=verify_token,
     )
@@ -42,7 +40,6 @@ async def signup(body: SignUpRequest, db: AsyncSession = Depends(get_db)):
     return TokenResponse(
         access_token=token,
         user_id=user.user_id,
-        auth_type=user.auth_type,
         nickname=user.nickname,
         email_verified=user.email_verified,
     )
@@ -61,7 +58,6 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     return TokenResponse(
         access_token=token,
         user_id=user.user_id,
-        auth_type=user.auth_type,
         nickname=user.nickname,
         email_verified=user.email_verified,
     )

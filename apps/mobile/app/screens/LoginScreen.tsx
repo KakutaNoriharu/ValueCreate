@@ -89,15 +89,9 @@ export default function LoginScreen({ navigation }: AuthStackScreenProps<'Login'
 
         <TouchableOpacity
           style={styles.signupButton}
-          onPress={() => navigation.navigate('SignUp', { authType: 'university' })}
+          onPress={() => navigation.navigate('SignUp')}
         >
-          <Text style={styles.signupButtonText}>🎓 大学メールで入会する</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.signupButtonSecondary}
-          onPress={() => navigation.navigate('SignUp', { authType: 'normal' })}
-        >
-          <Text style={styles.signupButtonSecondaryText}>🕵️ 普通メールで入会する</Text>
+          <Text style={styles.signupButtonText}>クラブに入会する</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
