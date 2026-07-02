@@ -4,11 +4,12 @@ import { Colors } from '../../constants/colors';
 import { Strings } from '../../constants/strings';
 import CalendarScreen from '../screens/CalendarScreen';
 import CompanyLinksScreen from '../screens/CompanyLinksScreen';
-import type { EventsTopTabParamList } from './types';
+import type { ToolsTopTabParamList } from './types';
 
-const Tab = createMaterialTopTabNavigator<EventsTopTabParamList>();
+const Tab = createMaterialTopTabNavigator<ToolsTopTabParamList>();
 
-export default function EventsTopTab() {
+// P-10 ツールハブ（上部タブ: カレンダー / 企業リンク帳）
+export default function ToolsTopTab() {
   return (
     <Tab.Navigator
       screenOptions={{

@@ -1,15 +1,16 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Colors } from '../constants/colors';
 import { Strings } from '../constants/strings';
-import type { Post, ReactionType } from '../types';
+import type { Post } from '../types';
 import CharacterAvatar from './CharacterAvatar';
-
-const REACTIONS: { type: ReactionType; label: string }[] = [
-  { type: 'wakaru', label: Strings.reaction.wakaru },
-  { type: 'toutoi', label: Strings.reaction.toutoi },
-  { type: 'kusa', label: Strings.reaction.kusa },
-];
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -23,20 +24,31 @@ function timeAgo(iso: string): string {
 
 interface Props {
   post: Post;
-  onReact: (postId: string, type: ReactionType) => void;
+  // v13: リアクションは「わかる」の1種のみ
+  onReact: (postId: string) => void;
+  onSendComment?: (postId: string, content: string, isTemplate: boolean) => void;
+  onPressUser?: (userId: string) => void;
 }
 
-export default function PostCard({ post, onReact }: Props) {
-  const { user, contamination_pt } = post.user
-    ? { user: post.user, contamination_pt: post.user.contamination_pt }
-    : { user: null, contamination_pt: 0 };
+export default function PostCard({ post, onReact, onSendComment, onPressUser }: Props) {
+  const user = post.user ?? null;
+  const contaminationPt = user?.contamination_pt ?? 0;
+  const [commentOpen, setCommentOpen] = useState(false);
+  const [draft, setDraft] = useState('');
 
   const isElimination = post.post_type === 'elimination';
-  const isHighContam = contamination_pt >= 35;
-  const isMidContam = contamination_pt >= 10 && contamination_pt < 35;
+  // SPEC v13: 15pt以上で⚠️汚染注意バッジ / 35pt以上で🚨バナー
+  const isHighContam = contaminationPt >= 35;
+  const isMidContam = contaminationPt >= 15 && contaminationPt < 35;
 
-  function getReactionCount(type: ReactionType): number {
-    return post.reactions.find((r) => r.reaction_type === type)?.count ?? 0;
+  const wakaruCount = post.reactions.find((r) => r.reaction_type === 'wakaru')?.count ?? 0;
+  const isReacted = post.my_reaction === 'wakaru';
+
+  function handleSend(content: string, isTemplate: boolean) {
+    const text = content.trim();
+    if (!text || !onSendComment) return;
+    onSendComment(post.post_id, text, isTemplate);
+    setDraft('');
   }
 
   if (isElimination) {
@@ -44,9 +56,11 @@ export default function PostCard({ post, onReact }: Props) {
       <View style={styles.obituaryCard}>
         <Text style={styles.obituaryTitle}>━━━━ 訃　報 ━━━━</Text>
         <Text style={styles.obituaryContent}>{post.content}</Text>
-        <Text style={styles.obituaryUser}>
-          @{user?.nickname ?? '名無し'} ・ {timeAgo(post.created_at)}
-        </Text>
+        <TouchableOpacity onPress={() => user && onPressUser?.(user.user_id)}>
+          <Text style={styles.obituaryUser}>
+            @{user?.nickname ?? '名無し'} ・ {timeAgo(post.created_at)}
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -60,10 +74,20 @@ export default function PostCard({ post, onReact }: Props) {
       )}
 
       <View style={styles.header}>
-        <CharacterAvatar stage={user?.character_stage ?? 'pure'} size={42} />
+        <TouchableOpacity
+          onPress={() => user && onPressUser?.(user.user_id)}
+          disabled={!user}
+        >
+          <CharacterAvatar stage={user?.character_stage ?? 'pure'} size={42} />
+        </TouchableOpacity>
         <View style={styles.headerInfo}>
           <View style={styles.nameRow}>
-            <Text style={styles.nickname}>{user?.nickname ?? '名無し'}</Text>
+            <TouchableOpacity
+              onPress={() => user && onPressUser?.(user.user_id)}
+              disabled={!user}
+            >
+              <Text style={styles.nickname}>{user?.nickname ?? '名無し'}</Text>
+            </TouchableOpacity>
             {isMidContam && (
               <Text style={styles.warnBadge}>{Strings.contamination.warningLow}</Text>
             )}
@@ -88,23 +112,65 @@ export default function PostCard({ post, onReact }: Props) {
         </View>
       )}
 
-      <View style={styles.reactions}>
-        {REACTIONS.map(({ type, label }) => {
-          const count = getReactionCount(type);
-          const isActive = post.my_reaction === type;
-          return (
-            <TouchableOpacity
-              key={type}
-              style={[styles.reactionBtn, isActive && styles.reactionBtnActive]}
-              onPress={() => onReact(post.post_id, type)}
-            >
-              <Text style={[styles.reactionLabel, isActive && styles.reactionLabelActive]}>
-                {label} {count > 0 ? count : ''}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={[styles.reactionBtn, isReacted && styles.reactionBtnActive]}
+          onPress={() => onReact(post.post_id)}
+        >
+          <Text style={[styles.reactionLabel, isReacted && styles.reactionLabelActive]}>
+            {Strings.reaction.wakaru} {wakaruCount > 0 ? wakaruCount : ''}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.commentToggle}
+          onPress={() => setCommentOpen((v) => !v)}
+        >
+          <Text style={styles.commentToggleText}>
+            💬 {post.comment_count > 0 ? post.comment_count : 'コメント'}
+          </Text>
+        </TouchableOpacity>
       </View>
+
+      {commentOpen && onSendComment && (
+        <View style={styles.commentArea}>
+          {/* テンプレコメント横スクロール */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.templateBar}
+          >
+            {Strings.templateComments.map((t) => (
+              <TouchableOpacity
+                key={t}
+                style={styles.templateChip}
+                onPress={() => handleSend(t, true)}
+              >
+                <Text style={styles.templateChipText}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* フリーテキストコメント */}
+          <View style={styles.commentInputRow}>
+            <TextInput
+              style={styles.commentInput}
+              placeholder="コメントを書く…"
+              placeholderTextColor={Colors.muted}
+              value={draft}
+              onChangeText={setDraft}
+              maxLength={140}
+            />
+            <TouchableOpacity
+              style={[styles.sendBtn, !draft.trim() && styles.sendBtnDisabled]}
+              onPress={() => handleSend(draft, false)}
+              disabled={!draft.trim()}
+            >
+              <Text style={styles.sendBtnText}>送信</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -159,9 +225,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.primary,
   },
-  badge: {
-    fontSize: 13,
-  },
   warnBadge: {
     fontSize: 11,
     color: Colors.warning,
@@ -187,8 +250,9 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     lineHeight: 20,
   },
-  reactions: {
+  actions: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
     marginTop: 2,
   },
@@ -196,7 +260,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 20,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 6,
     backgroundColor: Colors.background,
   },
@@ -204,15 +268,72 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     backgroundColor: Colors.primary,
   },
-  reactionBtnDisabled: {
-    opacity: 0.35,
-  },
   reactionLabel: {
     fontSize: 13,
     color: Colors.primary,
   },
   reactionLabelActive: {
     color: Colors.onPrimary,
+  },
+  commentToggle: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  commentToggleText: {
+    fontSize: 13,
+    color: Colors.muted,
+  },
+  commentArea: {
+    gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: 8,
+  },
+  templateBar: {
+    gap: 8,
+    paddingVertical: 2,
+  },
+  templateChip: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: Colors.background,
+  },
+  templateChipText: {
+    fontSize: 12,
+    color: Colors.primary,
+  },
+  commentInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  commentInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: Colors.primary,
+    backgroundColor: Colors.background,
+  },
+  sendBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  sendBtnDisabled: {
+    opacity: 0.4,
+  },
+  sendBtnText: {
+    color: Colors.onPrimary,
+    fontSize: 13,
+    fontWeight: '600',
   },
   obituaryCard: {
     backgroundColor: '#1c1c1c',

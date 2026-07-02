@@ -20,6 +20,7 @@ def _serialize_season(season: Season) -> dict:
     return {
         "season_id": season.season_id,
         "name": season.name,
+        "theme": season.theme,
         "status": season.status,
         "started_at": season.started_at.isoformat() if season.started_at else None,
         "ended_at": season.ended_at.isoformat() if season.ended_at else None,

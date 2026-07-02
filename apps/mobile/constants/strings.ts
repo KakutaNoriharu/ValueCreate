@@ -28,19 +28,24 @@ export const Strings = {
     home: 'ホーム',
     race: 'レース',
     post: '記録',
-    events: 'イベント',
+    tools: 'ツール',
     profile: '手帳',
     calendar: 'カレンダー',
     companies: '企業リンク帳',
     settings: '設定',
-    reminderDetail: 'イベント詳細',
+    reminderDetail: 'リマインダー詳細',
+    ranking: 'ランキング',
+    seasonEvent: 'シーズンイベント',
   },
 
   contamination: {
     pure: '純粋な魂',
+    whisper: '就活の気配',
     ghost: 'スーツの亡霊',
     slave: 'マイナビの奴隷',
     zombie: 'ガクチカゾンビ',
+    machine: '面接マシーン',
+    dog: '人事部の犬',
     banned: '社畜の卵（出禁）',
     warningLow: '⚠️汚染注意',
     warningHigh: '🚨就活汚染注意🚨',
@@ -49,9 +54,16 @@ export const Strings = {
 
   reaction: {
     wakaru: 'わかる',
-    toutoi: '尊い',
-    kusa: '草',
   },
+
+  // フリーテキストコメントと併用するテンプレコメント5種（F-02）
+  templateComments: [
+    'ご愁傷様です',
+    'まだ間に合う',
+    '帰ってこい',
+    '同志よ…',
+    '最高のサボりだ',
+  ],
 
   company: {
     securityNote: '⚠️ IDとパスワードは保存できません。ブラウザのパスワード管理機能をご利用ください。',

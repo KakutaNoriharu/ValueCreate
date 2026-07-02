@@ -21,6 +21,12 @@ class ContaminationLog(Base):
         nullable=False,
     )
     point_added: Mapped[int] = mapped_column(Integer, nullable=False)
+    # 申告経路: A=手動申告(記録のみ) / B=リマインダー完了 / C=投稿時選択
+    source: Mapped[str] = mapped_column(
+        Enum("manual", "reminder", "post", name="contamination_source_enum"),
+        default="manual",
+        nullable=False,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
 
     user: Mapped["User"] = relationship("User", back_populates="contamination_logs")

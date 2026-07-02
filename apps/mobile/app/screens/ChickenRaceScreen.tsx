@@ -14,7 +14,10 @@ import { Colors } from '../../constants/colors';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import { useChickenRaceStore } from '../../stores/chickenRaceStore';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ChickenRaceEntry, Season } from '../../types';
+import type { RootStackParamList } from '../navigation/types';
 import CharacterAvatar from '../../components/CharacterAvatar';
 import { useWebSocket } from '../../hooks/useWebSocket';
 
@@ -43,6 +46,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function ChickenRaceScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const user = useAuthStore((s) => s.user);
   const { survivors, obituaries, stats, season, myEntry, setSurvivors, setObituaries, setStats, setSeason, setMyEntry, addObituary } =
     useChickenRaceStore();
@@ -158,7 +162,12 @@ export default function ChickenRaceScreen() {
         keyExtractor={(item) => item.entry_id}
         renderItem={({ item, index }) =>
           activeTab === 'survivors' ? (
-            <SurvivorItem entry={item} rank={index + 1} myId={user?.user_id} />
+            <SurvivorItem
+              entry={item}
+              rank={index + 1}
+              myId={user?.user_id}
+              onPress={(uid) => navigation.navigate('OtherMember', { userId: uid })}
+            />
           ) : (
             <ObituaryItem entry={item} />
           )
@@ -272,11 +281,25 @@ export default function ChickenRaceScreen() {
   );
 }
 
-function SurvivorItem({ entry, rank, myId }: { entry: ChickenRaceEntry; rank: number; myId?: string }) {
+function SurvivorItem({
+  entry,
+  rank,
+  myId,
+  onPress,
+}: {
+  entry: ChickenRaceEntry;
+  rank: number;
+  myId?: string;
+  onPress?: (userId: string) => void;
+}) {
   const isMe = entry.user_id === myId;
   const rankColors: Record<number, string> = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' };
   return (
-    <View style={[styles.listItem, isMe && styles.listItemMe]}>
+    <TouchableOpacity
+      style={[styles.listItem, isMe && styles.listItemMe]}
+      activeOpacity={0.7}
+      onPress={() => entry.user && onPress?.(entry.user.user_id)}
+    >
       <View style={[styles.rankBadge, rank <= 3 && { backgroundColor: rankColors[rank] }]}>
         <Text style={styles.rankText}>{rank}</Text>
       </View>
@@ -286,7 +309,7 @@ function SurvivorItem({ entry, rank, myId }: { entry: ChickenRaceEntry; rank: nu
         <Text style={styles.itemSub}>{entry.survived_days}日生存</Text>
       </View>
       <Text style={styles.itemPt}>{entry.user?.contamination_pt ?? 0}pt</Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -314,7 +337,7 @@ const styles = StyleSheet.create({
   noSeasonSub: { fontSize: 13, color: Colors.muted },
   header: {
     backgroundColor: Colors.primary,
-    paddingTop: 52,
+    paddingTop: 14,
     paddingHorizontal: 16,
     paddingBottom: 14,
     flexDirection: 'row',

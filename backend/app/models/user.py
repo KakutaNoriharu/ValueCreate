@@ -19,7 +19,10 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     contamination_pt: Mapped[int] = mapped_column(Integer, default=0)
     character_stage: Mapped[str] = mapped_column(
-        Enum("pure", "ghost", "slave", "zombie", "banned", name="character_stage_enum"),
+        Enum(
+            "pure", "whisper", "ghost", "slave", "zombie", "machine", "dog", "banned",
+            name="character_stage_enum",
+        ),
         default="pure",
     )
     streak_days: Mapped[int] = mapped_column(Integer, default=0)
@@ -36,6 +39,7 @@ class User(Base):
 
     posts: Mapped[list["Post"]] = relationship("Post", back_populates="user", lazy="select")
     reactions: Mapped[list["Reaction"]] = relationship("Reaction", back_populates="user", lazy="select")
+    comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="user", lazy="select")
     contamination_logs: Mapped[list["ContaminationLog"]] = relationship("ContaminationLog", back_populates="user", lazy="select")
     chicken_race_entries: Mapped[list["ChickenRace"]] = relationship("ChickenRace", back_populates="user", lazy="select")
     calendar_events: Mapped[list["CalendarEvent"]] = relationship("CalendarEvent", back_populates="user", lazy="select")

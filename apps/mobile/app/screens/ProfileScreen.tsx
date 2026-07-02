@@ -17,6 +17,7 @@ import { useAuthStore } from '../../stores/authStore';
 import type { Post, User } from '../../types';
 import type { RootStackParamList } from '../navigation/types';
 import CharacterAvatar from '../../components/CharacterAvatar';
+import { CHARACTER_STAGES, getStageDef } from '../../constants/characterStages';
 
 interface BadgeDef {
   key: string;
@@ -31,22 +32,6 @@ const STREAK_BADGES: BadgeDef[] = [
   { key: 'day60', label: '無敵モード', icon: '🔥', days: 60 },
   { key: 'day100', label: '伝説のサボリスト', icon: '👑', days: 100 },
 ];
-
-const STAGE_LABELS: Record<string, string> = {
-  pure: '純粋な魂',
-  ghost: 'スーツの亡霊',
-  slave: 'マイナビの奴隷',
-  zombie: 'ガクチカゾンビ',
-  banned: '社畜の卵（出禁）',
-};
-
-const STAGE_MAX: Record<string, number> = {
-  pure: 10,
-  ghost: 35,
-  slave: 100,
-  zombie: 200,
-  banned: 200,
-};
 
 function streakTitle(days: number): string {
   if (days >= 100) return '伝説のサボリスト';
@@ -101,7 +86,15 @@ export default function ProfileScreen() {
     );
   }
 
-  const contaminPct = Math.min(1, user.contamination_pt / (STAGE_MAX[user.character_stage] ?? 200));
+  const stageDef = getStageDef(user.character_stage);
+  // 次ステージ到達までの残りpt（最終段階前は maxPt+1 が次段階の下限）
+  const nextStageThreshold = stageDef.maxPt != null ? stageDef.maxPt + 1 : null;
+  const ptToNextStage = nextStageThreshold != null
+    ? Math.max(0, nextStageThreshold - user.contamination_pt)
+    : 0;
+  const contaminPct = nextStageThreshold != null
+    ? Math.min(1, user.contamination_pt / nextStageThreshold)
+    : 1;
   const nextMilestone = nextStreakMilestone(user.streak_days);
   const streakPct = Math.min(1, user.streak_days / nextMilestone);
 
@@ -130,7 +123,13 @@ export default function ProfileScreen() {
           {user.university && user.show_university && (
             <Text style={styles.universityText}>{user.university}{user.faculty ? ` · ${user.faculty}` : ''}</Text>
           )}
-          <Text style={styles.stageLabel}>{STAGE_LABELS[user.character_stage]}</Text>
+          <View style={styles.stageRow}>
+            <View style={styles.levelBadge}>
+              <Text style={styles.levelBadgeText}>Lv.{stageDef.level} / 8</Text>
+            </View>
+            <Text style={styles.stageLabel}>{stageDef.icon} {stageDef.label}</Text>
+          </View>
+          <Text style={styles.stageDesc}>{stageDef.description}</Text>
         </View>
       </View>
 
@@ -149,7 +148,9 @@ export default function ProfileScreen() {
           />
         </View>
         <Text style={styles.progressLabel}>
-          {STAGE_LABELS[user.character_stage]} → 次のステージまで {STAGE_MAX[user.character_stage] - user.contamination_pt}pt
+          {nextStageThreshold != null
+            ? `${stageDef.label} → 次のステージまで ${ptToNextStage}pt`
+            : `${stageDef.label}（最終段階）`}
         </Text>
       </View>
 
@@ -192,6 +193,34 @@ export default function ProfileScreen() {
               );
             })}
           </View>
+      </View>
+
+      {/* キャラ進化テーブル（全8段階・現在位置ハイライト） */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>キャラ進化（全8段階）</Text>
+        <View style={styles.stageTable}>
+          {CHARACTER_STAGES.map((s) => {
+            const isCurrent = s.stage === user.character_stage;
+            const range = s.stage === 'banned'
+              ? '内定獲得'
+              : s.maxPt != null ? `${s.minPt}〜${s.maxPt}pt` : `${s.minPt}pt〜`;
+            return (
+              <View
+                key={s.stage}
+                style={[styles.stageTableRow, isCurrent && styles.stageTableRowCurrent]}
+              >
+                <Text style={styles.stageTableIcon}>{s.icon}</Text>
+                <View style={styles.stageTableInfo}>
+                  <Text style={[styles.stageTableName, isCurrent && styles.stageTableNameCurrent]}>
+                    Lv.{s.level} {s.label}
+                  </Text>
+                  <Text style={styles.stageTableRange}>{range}</Text>
+                </View>
+                {isCurrent && <Text style={styles.stageTableNow}>現在</Text>}
+              </View>
+            );
+          })}
+        </View>
       </View>
 
       {/* 最近の投稿 */}
@@ -240,7 +269,32 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   nickname: { fontSize: 20, fontWeight: 'bold', color: Colors.onPrimary },
   universityText: { fontSize: 13, color: Colors.muted },
-  stageLabel: { fontSize: 13, color: Colors.muted, fontStyle: 'italic' },
+  stageRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  levelBadge: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  levelBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.onPrimary },
+  stageLabel: { fontSize: 14, color: Colors.onPrimary, fontWeight: '600' },
+  stageDesc: { fontSize: 11, color: Colors.muted, lineHeight: 16 },
+  stageTable: { backgroundColor: Colors.white, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: Colors.border },
+  stageTableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  stageTableRowCurrent: { backgroundColor: Colors.contaminatedCharacter },
+  stageTableIcon: { fontSize: 24, width: 30, textAlign: 'center' },
+  stageTableInfo: { flex: 1, gap: 2 },
+  stageTableName: { fontSize: 13, fontWeight: '600', color: Colors.primary },
+  stageTableNameCurrent: { color: Colors.contamination, fontWeight: '800' },
+  stageTableRange: { fontSize: 11, color: Colors.muted },
+  stageTableNow: { fontSize: 11, fontWeight: '700', color: Colors.contamination },
   statCard: {
     backgroundColor: Colors.white,
     margin: 12,

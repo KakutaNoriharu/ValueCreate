@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import delete, select
 
 from app.core.auth import hash_password
+from app.utils.character_stage import compute_stage
 from app.database import AsyncSessionLocal, create_tables
 from app.models.calendar import CalendarEvent
 from app.models.chicken_race import ChickenRace, Season
@@ -47,7 +48,7 @@ async def seed() -> None:
                 grade=4,
                 email_verified=True,  # ← 認証済みにしておく
                 contamination_pt=120,
-                character_stage="ghost",
+                character_stage=compute_stage(120),  # 120pt → machine(Lv6 面接マシーン)
                 streak_days=37,
             )
             db.add(user)
@@ -57,7 +58,7 @@ async def seed() -> None:
             user.password_hash = hash_password(TEST_PASSWORD)
             user.email_verified = True
             user.contamination_pt = 120
-            user.character_stage = "ghost"
+            user.character_stage = compute_stage(120)  # machine(Lv6)
             user.streak_days = 37
             # 既存のサンプルデータを掃除（冪等性のため）
             await db.execute(delete(Reaction).where(Reaction.user_id == user.user_id))
@@ -101,6 +102,7 @@ async def seed() -> None:
         if season is None:
             season = Season(
                 name="第1期 内定回避シーズン",
+                theme="梅雨を乗り切れ！内定回避マンスリー",
                 status="active",
                 started_at=now - timedelta(days=40),
             )

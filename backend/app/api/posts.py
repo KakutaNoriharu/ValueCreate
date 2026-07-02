@@ -8,8 +8,8 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models.user import User
-from app.models.post import Post, Reaction
-from app.schemas.post import PostCreate
+from app.models.post import Post, Reaction, Comment
+from app.schemas.post import PostCreate, CommentCreate
 from app.core.auth import get_current_user
 
 router = APIRouter()
@@ -19,6 +19,11 @@ def _serialize_post(post: Post, current_user_id: str) -> dict:
     my_reaction = next(
         (r.reaction_type for r in post.reactions if r.user_id == current_user_id), None
     )
+    # comments はリレーション未ロードのこともあるため安全に件数を取る
+    try:
+        comment_count = len(post.comments)
+    except Exception:
+        comment_count = 0
     return {
         "post_id": post.post_id,
         "user_id": post.user_id,
@@ -39,7 +44,23 @@ def _serialize_post(post: Post, current_user_id: str) -> dict:
             for rt, cnt in sorted(counts.items())
         ],
         "my_reaction": my_reaction,
+        "comment_count": comment_count,
         "created_at": post.created_at.isoformat(),
+    }
+
+
+def _serialize_comment(comment: Comment) -> dict:
+    return {
+        "comment_id": comment.comment_id,
+        "post_id": comment.post_id,
+        "content": comment.content,
+        "is_template": comment.is_template,
+        "user": {
+            "user_id": comment.user.user_id,
+            "nickname": comment.user.nickname,
+            "character_stage": comment.user.character_stage,
+        } if comment.user else None,
+        "created_at": comment.created_at.isoformat(),
     }
 
 
@@ -51,7 +72,11 @@ async def get_feed(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    q = select(Post).options(selectinload(Post.user), selectinload(Post.reactions))
+    q = select(Post).options(
+        selectinload(Post.user),
+        selectinload(Post.reactions),
+        selectinload(Post.comments),
+    )
 
     if cursor:
         q = q.where(Post.created_at < cursor)
@@ -88,7 +113,7 @@ async def create_post(
     db.add(post)
     await db.commit()
     await db.refresh(post)
-    await db.refresh(post, ["user", "reactions"])
+    await db.refresh(post, ["user", "reactions", "comments"])
     return _serialize_post(post, current_user.user_id)
 
 
@@ -127,7 +152,8 @@ async def react_to_post(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if reaction_type not in ("wakaru", "toutoi", "kusa"):
+    # リアクションは「わかる」の1種のみ（v13で尊い・草は廃止）
+    if reaction_type != "wakaru":
         raise HTTPException(status_code=400, detail="無効なリアクションタイプです")
 
     existing = await db.execute(
@@ -149,3 +175,42 @@ async def react_to_post(
 
     await db.commit()
     return {"message": "リアクションしました"}
+
+
+@router.get("/{post_id}/comments")
+async def get_comments(
+    post_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Comment)
+        .options(selectinload(Comment.user))
+        .where(Comment.post_id == post_id)
+        .order_by(Comment.created_at.asc())
+    )
+    comments = result.scalars().all()
+    return [_serialize_comment(c) for c in comments]
+
+
+@router.post("/{post_id}/comments", status_code=201)
+async def create_comment(
+    post_id: str,
+    body: CommentCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    post = await db.get(Post, post_id)
+    if not post:
+        raise HTTPException(status_code=404, detail="投稿が見つかりません")
+
+    comment = Comment(
+        post_id=post_id,
+        user_id=current_user.user_id,
+        content=body.content,
+        is_template=body.is_template,
+    )
+    db.add(comment)
+    await db.commit()
+    await db.refresh(comment, ["user"])
+    return _serialize_comment(comment)

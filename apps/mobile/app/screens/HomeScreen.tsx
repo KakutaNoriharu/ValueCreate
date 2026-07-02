@@ -13,7 +13,7 @@ import { Strings } from '../../constants/strings';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import { usePostStore } from '../../stores/postStore';
-import type { Post, ReactionType, SurvivorStats } from '../../types';
+import type { Post, SurvivorStats } from '../../types';
 import PostCard from '../../components/PostCard';
 import type { MainTabScreenProps } from '../navigation/types';
 
@@ -79,9 +79,18 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
     setRefreshing(false);
   }
 
-  async function handleReact(postId: string, type: ReactionType) {
+  async function handleReact(postId: string) {
     try {
-      await api.post(`/api/posts/${postId}/reactions?reaction_type=${type}`);
+      await api.post(`/api/posts/${postId}/reactions?reaction_type=wakaru`);
+      await loadFeed(true);
+    } catch {
+      // silent
+    }
+  }
+
+  async function handleSendComment(postId: string, content: string, isTemplate: boolean) {
+    try {
+      await api.post(`/api/posts/${postId}/comments`, { content, is_template: isTemplate });
       await loadFeed(true);
     } catch {
       // silent
@@ -148,7 +157,14 @@ export default function HomeScreen({ navigation }: MainTabScreenProps<'Home'>) {
         data={feedPosts}
         keyExtractor={(item) => item.post_id}
         renderItem={({ item }) => (
-          <PostCard post={item} onReact={handleReact} />
+          <PostCard
+            post={item}
+            onReact={handleReact}
+            onSendComment={handleSendComment}
+            onPressUser={(userId) =>
+              navigation.getParent()?.navigate('OtherMember', { userId })
+            }
+          />
         )}
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={

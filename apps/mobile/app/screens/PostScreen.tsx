@@ -18,7 +18,7 @@ import type { Post } from '../../types';
 import CharacterAvatar from '../../components/CharacterAvatar';
 import type { MainTabScreenProps } from '../navigation/types';
 
-type PostTab = 'normal' | 'daily' | 'contamination';
+type PostTab = 'normal' | 'contamination';
 
 const CONTAMINATION_ACTIONS = [
   { key: 'es', label: 'ES提出', points: 10 },
@@ -37,10 +37,11 @@ export default function PostScreen({ navigation }: MainTabScreenProps<'Post'>) {
 
   const [activeTab, setActiveTab] = useState<PostTab>('normal');
   const [content, setContent] = useState('');
+  const [dailyEnabled, setDailyEnabled] = useState(false); // 通常投稿内のデイリーフォーマットトグル
   const [dailySkip, setDailySkip] = useState('');
   const [dailyInstead, setDailyInstead] = useState('');
   const [dailyComment, setDailyComment] = useState('');
-  const [didJobHunt, setDidJobHunt] = useState<boolean | null>(null);
+  const [alsoPost, setAlsoPost] = useState(false); // 汚染申告: タイムラインにも投稿する（OFF=記録のみ=経路A）
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -51,38 +52,58 @@ export default function PostScreen({ navigation }: MainTabScreenProps<'Post'>) {
     navigation.navigate('Home');
   }
 
+  function resetForm() {
+    setContent('');
+    setDailyEnabled(false);
+    setDailySkip('');
+    setDailyInstead('');
+    setDailyComment('');
+    setAlsoPost(false);
+    setSelectedAction(null);
+  }
+
   async function handleSubmit() {
-    if (!content.trim() && activeTab !== 'contamination') {
+    if (activeTab === 'normal' && !content.trim()) {
       Alert.alert('エラー', '内容を入力してください');
+      return;
+    }
+    if (activeTab === 'contamination' && !selectedAction) {
+      Alert.alert('エラー', '就活行動を選択してください');
       return;
     }
 
     setLoading(true);
     try {
-      if (activeTab === 'contamination' && selectedAction) {
-        await api.post('/api/contamination/report', { action_type: selectedAction });
-      }
-
-      if (activeTab !== 'contamination' || content.trim()) {
+      if (activeTab === 'normal') {
+        // 通常投稿（デイリートグルONなら post_type=daily）
         const body: Record<string, unknown> = {
-          content: content.trim() || '汚染申告しました',
-          post_type: activeTab === 'daily' ? 'daily' : 'normal',
+          content: content.trim(),
+          post_type: dailyEnabled ? 'daily' : 'normal',
         };
-        if (activeTab === 'daily') {
+        if (dailyEnabled) {
           body.daily_skip = dailySkip.trim() || undefined;
           body.daily_instead = dailyInstead.trim() || undefined;
           body.daily_comment = dailyComment.trim() || undefined;
         }
         const post = await api.post<Post>('/api/posts', body);
         prependPost(post);
+      } else {
+        // 汚染申告: alsoPost=OFF は記録のみ(経路A) / ON はタイムラインにも投稿(経路C)
+        const source = alsoPost ? 'post' : 'manual';
+        await api.post('/api/contamination/report', {
+          action_type: selectedAction,
+          source,
+        });
+        if (alsoPost) {
+          const post = await api.post<Post>('/api/posts', {
+            content: content.trim() || '就活してしまった…',
+            post_type: 'normal',
+          });
+          prependPost(post);
+        }
       }
 
-      setContent('');
-      setDailySkip('');
-      setDailyInstead('');
-      setDailyComment('');
-      setDidJobHunt(null);
-      setSelectedAction(null);
+      resetForm();
       navigation.navigate('Home');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '投稿に失敗しました';
@@ -94,7 +115,6 @@ export default function PostScreen({ navigation }: MainTabScreenProps<'Post'>) {
 
   const tabs: { key: PostTab; label: string }[] = [
     { key: 'normal', label: '通常投稿' },
-    { key: 'daily', label: 'デイリー' },
     { key: 'contamination', label: '汚染申告' },
   ];
 
@@ -145,16 +165,12 @@ export default function PostScreen({ navigation }: MainTabScreenProps<'Post'>) {
           </View>
         </View>
 
-        {/* Normal / Daily: text input */}
-        {activeTab !== 'contamination' && (
+        {/* 通常投稿タブ */}
+        {activeTab === 'normal' && (
           <>
             <TextInput
               style={styles.textInput}
-              placeholder={
-                activeTab === 'daily'
-                  ? '📋 今日のサボり報告を書こう…'
-                  : '今日も就活しなかった理由…（最大140文字）'
-              }
+              placeholder="今日も就活しなかった理由…（最大140文字）"
               placeholderTextColor={Colors.muted}
               value={content}
               onChangeText={(t) => setContent(t.slice(0, MAX))}
@@ -165,59 +181,48 @@ export default function PostScreen({ navigation }: MainTabScreenProps<'Post'>) {
             <Text style={[styles.charCount, remaining <= 20 && styles.charCountWarn]}>
               {remaining}
             </Text>
+
+            {/* デイリーフォーマットのトグル（オプション・1日1回） */}
+            <TouchableOpacity
+              style={styles.toggleRow}
+              onPress={() => setDailyEnabled((v) => !v)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkbox, dailyEnabled && styles.checkboxOn]}>
+                {dailyEnabled && <Text style={styles.checkboxMark}>✓</Text>}
+              </View>
+              <Text style={styles.toggleLabel}>📋 デイリー報告フォーマットを使う</Text>
+            </TouchableOpacity>
+
+            {dailyEnabled && (
+              <View style={styles.dailySection}>
+                <TextInput
+                  style={styles.subInput}
+                  placeholder="スキップした就活行動（例：説明会3社）"
+                  placeholderTextColor={Colors.muted}
+                  value={dailySkip}
+                  onChangeText={setDailySkip}
+                />
+                <TextInput
+                  style={styles.subInput}
+                  placeholder="代わりにやったこと（例：Netflix4時間）"
+                  placeholderTextColor={Colors.muted}
+                  value={dailyInstead}
+                  onChangeText={setDailyInstead}
+                />
+                <TextInput
+                  style={styles.subInput}
+                  placeholder="一言（例：後悔はない）"
+                  placeholderTextColor={Colors.muted}
+                  value={dailyComment}
+                  onChangeText={setDailyComment}
+                />
+              </View>
+            )}
           </>
         )}
 
-        {/* Daily extra fields */}
-        {activeTab === 'daily' && (
-          <View style={styles.dailySection}>
-            <Text style={styles.dailySectionTitle}>📋 今日のサボり報告</Text>
-            <TextInput
-              style={styles.subInput}
-              placeholder="スキップした就活行動（例：説明会3社）"
-              placeholderTextColor={Colors.muted}
-              value={dailySkip}
-              onChangeText={setDailySkip}
-            />
-            <TextInput
-              style={styles.subInput}
-              placeholder="代わりにやったこと（例：Netflix4時間）"
-              placeholderTextColor={Colors.muted}
-              value={dailyInstead}
-              onChangeText={setDailyInstead}
-            />
-            <TextInput
-              style={styles.subInput}
-              placeholder="一言（例：後悔はない）"
-              placeholderTextColor={Colors.muted}
-              value={dailyComment}
-              onChangeText={setDailyComment}
-            />
-          </View>
-        )}
-
-        {/* Activity selector for normal/daily tabs */}
-        {activeTab !== 'contamination' && (
-          <View style={styles.activitySection}>
-            <Text style={styles.activityLabel}>今日は就活しましたか？</Text>
-            <View style={styles.activityRow}>
-              <TouchableOpacity
-                style={[styles.activityBtn, didJobHunt === false && styles.activityBtnSafe]}
-                onPress={() => setDidJobHunt(false)}
-              >
-                <Text style={styles.activityBtnText}>してない（セーフ）</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.activityBtn, didJobHunt === true && styles.activityBtnDanger]}
-                onPress={() => { setDidJobHunt(true); setActiveTab('contamination'); }}
-              >
-                <Text style={styles.activityBtnText}>した（汚染申告）</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* Contamination tab */}
+        {/* 汚染申告タブ */}
         {activeTab === 'contamination' && (
           <View style={styles.contamSection}>
             <Text style={styles.contamTitle}>⚠️ 汚染申告</Text>
@@ -239,7 +244,23 @@ export default function PostScreen({ navigation }: MainTabScreenProps<'Post'>) {
                 )}
               </TouchableOpacity>
             ))}
-            {selectedAction && (
+
+            {/* タイムラインにも投稿する（OFF=記録のみ） */}
+            <TouchableOpacity
+              style={styles.toggleRow}
+              onPress={() => setAlsoPost((v) => !v)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkbox, alsoPost && styles.checkboxOn]}>
+                {alsoPost && <Text style={styles.checkboxMark}>✓</Text>}
+              </View>
+              <Text style={styles.toggleLabel}>タイムラインにも投稿する</Text>
+            </TouchableOpacity>
+            <Text style={styles.toggleHint}>
+              {alsoPost ? 'みんなのタイムラインに表示されます' : 'OFF：記録のみ（タイムラインには流れません）'}
+            </Text>
+
+            {alsoPost && (
               <TextInput
                 style={[styles.textInput, { marginTop: 12 }]}
                 placeholder="一言コメント（任意）…"
@@ -368,9 +389,45 @@ const styles = StyleSheet.create({
     color: Colors.contamination,
     fontWeight: '700',
   },
-  dailySection: {
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
     marginTop: 16,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+  },
+  checkboxOn: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  checkboxMark: {
+    color: Colors.onPrimary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  toggleLabel: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '500',
+  },
+  toggleHint: {
+    fontSize: 12,
+    color: Colors.muted,
+    marginTop: 6,
+    marginLeft: 32,
+  },
+  dailySection: {
+    gap: 10,
+    marginTop: 12,
     backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 14,

@@ -4,10 +4,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { Strings } from '../../constants/strings';
 import HomeScreen from '../screens/HomeScreen';
-import ChickenRaceScreen from '../screens/ChickenRaceScreen';
+import ChickenRaceTopTab from './ChickenRaceTopTab';
 import PostScreen from '../screens/PostScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import EventsTopTab from './EventsTopTab';
+import ToolsTopTab from './ToolsTopTab';
 import type { MainTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -53,7 +53,7 @@ export default function MainTab() {
       />
       <Tab.Screen
         name="ChickenRace"
-        component={ChickenRaceScreen}
+        component={ChickenRaceTopTab}
         options={{
           tabBarLabel: Strings.nav.race,
           tabBarIcon: ({ color }) => <TabIcon icon="🏆" color={color} />,
@@ -70,11 +70,11 @@ export default function MainTab() {
         }}
       />
       <Tab.Screen
-        name="Events"
-        component={EventsTopTab}
+        name="Tools"
+        component={ToolsTopTab}
         options={{
-          tabBarLabel: Strings.nav.events,
-          tabBarIcon: ({ color }) => <TabIcon icon="📅" color={color} />,
+          tabBarLabel: Strings.nav.tools,
+          tabBarIcon: ({ color }) => <TabIcon icon="🛠️" color={color} />,
         }}
       />
       <Tab.Screen

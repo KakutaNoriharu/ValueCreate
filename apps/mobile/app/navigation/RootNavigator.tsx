@@ -7,6 +7,7 @@ import MainTab from './MainTab';
 import type { RootStackParamList } from './types';
 import ReminderDetailScreen from '../screens/ReminderDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import OtherMemberScreen from '../screens/OtherMemberScreen';
 import { Strings } from '../../constants/strings';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -27,6 +28,11 @@ function MainStack() {
         name="Settings"
         component={SettingsScreen}
         options={{ title: Strings.nav.settings, headerBackTitle: '' }}
+      />
+      <Stack.Screen
+        name="OtherMember"
+        component={OtherMemberScreen}
+        options={{ title: Strings.member.profile, headerBackTitle: '' }}
       />
     </Stack.Navigator>
   );

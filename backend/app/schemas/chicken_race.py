@@ -7,6 +7,7 @@ from pydantic import BaseModel
 class SeasonResponse(BaseModel):
     season_id: str
     name: str
+    theme: Optional[str] = None
     status: str
     started_at: Optional[datetime] = None
     ended_at: Optional[datetime] = None

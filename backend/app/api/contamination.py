@@ -96,6 +96,7 @@ async def report_contamination(
     db: AsyncSession = Depends(get_db),
 ):
     point = ACTION_POINTS.get(body.action_type, 0)
+    source = body.source if body.source in ("manual", "reminder", "post") else "manual"
 
     if body.action_type == "naitei":
         current_user.is_banned = True
@@ -105,6 +106,7 @@ async def report_contamination(
             user_id=current_user.user_id,
             action_type=body.action_type,
             point_added=point,
+            source=source,
         ))
         await _auto_eliminate(current_user, "naitei", db)
         await db.commit()
@@ -118,6 +120,7 @@ async def report_contamination(
         user_id=current_user.user_id,
         action_type=body.action_type,
         point_added=point,
+        source=source,
     ))
 
     if body.action_type in ELIMINATION_TRIGGERS:

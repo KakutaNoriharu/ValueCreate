@@ -43,6 +43,46 @@ async def get_my_posts(
     return result.scalars().all()
 
 
+@router.get("/{user_id}")
+async def get_member(
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """P-07 他メンバー手帳（読み取り専用の公開プロフィール）"""
+    member = await db.get(User, user_id)
+    if not member:
+        raise HTTPException(status_code=404, detail="メンバーが見つかりません")
+    return {
+        "user_id": member.user_id,
+        "nickname": member.nickname,
+        "character_stage": member.character_stage,
+        "contamination_pt": member.contamination_pt if member.show_contamination else None,
+        "show_contamination": member.show_contamination,
+        "streak_days": member.streak_days,
+        "is_banned": member.is_banned,
+        "university": member.university if member.show_university else None,
+        "faculty": member.faculty if member.show_university else None,
+        "created_at": member.created_at.isoformat(),
+    }
+
+
+@router.get("/{user_id}/posts")
+async def get_member_posts(
+    user_id: str,
+    limit: int = 10,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Post)
+        .where(Post.user_id == user_id)
+        .order_by(Post.created_at.desc())
+        .limit(limit)
+    )
+    return result.scalars().all()
+
+
 @router.delete("/me")
 async def withdraw(
     current_user: User = Depends(get_current_user),

@@ -166,6 +166,7 @@ async def complete_event(
             user_id=current_user.user_id,
             action_type=event.event_type,
             point_added=points,
+            source="reminder",  # 経路B: リマインダー完了
         ))
 
         # チキンレース自動脱落

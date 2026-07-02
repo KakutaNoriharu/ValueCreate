@@ -1,6 +1,15 @@
-export type CharacterStage = 'pure' | 'ghost' | 'slave' | 'zombie' | 'banned';
+export type CharacterStage =
+  | 'pure'
+  | 'whisper'
+  | 'ghost'
+  | 'slave'
+  | 'zombie'
+  | 'machine'
+  | 'dog'
+  | 'banned';
 export type PostType = 'normal' | 'daily' | 'elimination';
-export type ReactionType = 'wakaru' | 'toutoi' | 'kusa';
+export type ReactionType = 'wakaru';
+export type ContaminationSource = 'manual' | 'reminder' | 'post';
 export type ChickenRaceStatus = 'preseason' | 'alive' | 'eliminated' | 'completed';
 export type SeasonStatus = 'preseason' | 'active' | 'finished';
 export type CompanyStatus = 'pending' | 'es_submitted' | 'in_progress' | 'done';
@@ -40,6 +49,7 @@ export interface Post {
   daily_comment?: string;
   reactions: ReactionSummary[];
   my_reaction?: ReactionType;
+  comment_count: number;
   created_at: string;
 }
 
@@ -55,9 +65,19 @@ export interface ReactionSummary {
   count: number;
 }
 
+export interface Comment {
+  comment_id: string;
+  post_id: string;
+  content: string;
+  is_template: boolean;
+  user: UserSummary | null;
+  created_at: string;
+}
+
 export interface Season {
   season_id: string;
   name: string;
+  theme?: string;
   status: SeasonStatus;
   started_at?: string;
   ended_at?: string;
@@ -110,6 +130,7 @@ export interface ContaminationLog {
   user_id: string;
   action_type: ActionType;
   point_added: number;
+  source: ContaminationSource;
   created_at: string;
 }
 

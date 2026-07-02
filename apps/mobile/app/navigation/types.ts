@@ -13,13 +13,18 @@ export type MainTabParamList = {
   Home: undefined;
   ChickenRace: undefined;
   Post: undefined;
-  Events: undefined;
+  Tools: undefined;
   Profile: undefined;
 };
 
-export type EventsTopTabParamList = {
+export type ToolsTopTabParamList = {
   Calendar: undefined;
   CompanyLinks: undefined;
+};
+
+export type ChickenRaceTopTabParamList = {
+  Ranking: undefined;
+  SeasonEvent: undefined;
 };
 
 export type RootStackParamList = {
@@ -27,6 +32,7 @@ export type RootStackParamList = {
   ReminderDetail: { eventId: string };
   Settings: undefined;
   EditProfile: undefined;
+  OtherMember: { userId: string };
 };
 
 export type AuthStackScreenProps<T extends keyof AuthStackParamList> =
@@ -35,8 +41,11 @@ export type AuthStackScreenProps<T extends keyof AuthStackParamList> =
 export type MainTabScreenProps<T extends keyof MainTabParamList> =
   BottomTabScreenProps<MainTabParamList, T>;
 
-export type EventsTopTabScreenProps<T extends keyof EventsTopTabParamList> =
-  MaterialTopTabScreenProps<EventsTopTabParamList, T>;
+export type ToolsTopTabScreenProps<T extends keyof ToolsTopTabParamList> =
+  MaterialTopTabScreenProps<ToolsTopTabParamList, T>;
+
+export type ChickenRaceTopTabScreenProps<T extends keyof ChickenRaceTopTabParamList> =
+  MaterialTopTabScreenProps<ChickenRaceTopTabParamList, T>;
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> =
   NativeStackScreenProps<RootStackParamList, T>;
